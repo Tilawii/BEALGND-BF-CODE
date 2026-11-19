@@ -1,0 +1,149 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "banner": {
+      "type": "main-collection-banner",
+      "disabled": true,
+      "settings": {
+        "show_collection_description": true,
+        "show_collection_image": false,
+        "color_scheme": "scheme-1"
+      }
+    },
+    "bealgnd_banner_duo": {
+      "type": "bealgnd-collection-banner-duo",
+      "settings": {
+        "image_1": "shopify://shop_images/bealgnd-banner-keyrings-1.jpg",
+        "link": "",
+        "show_tag": false,
+        "tag_text": "Buy 1, get 1 free",
+        "height_desktop": 320,
+        "height_mobile": 152,
+        "gap": 3,
+        "margin_top": 0,
+        "margin_bottom": 16,
+        "image_2": "shopify://shop_images/bealgnd-banner-keyrings-2.jpg"
+      }
+    },
+    "bealgnd_collection_carousel_8ahfN8": {
+      "type": "bealgnd-collection-carousel",
+      "blocks": {
+        "collection_BcVk3y": {
+          "type": "collection",
+          "settings": {
+            "collection": "bags",
+            "custom_title": "Bags"
+          }
+        },
+        "collection_TWw6iF": {
+          "type": "collection",
+          "settings": {
+            "collection": "crossbody-bags",
+            "custom_title": "Crossbody"
+          }
+        },
+        "collection_NU4PHg": {
+          "type": "collection",
+          "settings": {
+            "collection": "travel-bags-new-collection",
+            "custom_title": ""
+          }
+        },
+        "collection_AJYXrC": {
+          "type": "collection",
+          "settings": {
+            "collection": "cardholders",
+            "custom_title": ""
+          }
+        },
+        "collection_9RCGRK": {
+          "type": "collection",
+          "settings": {
+            "collection": "headwear",
+            "custom_title": ""
+          }
+        },
+        "collection_d9gaG6": {
+          "type": "collection",
+          "settings": {
+            "collection": "key-rings",
+            "custom_title": ""
+          }
+        },
+        "collection_PiJiAm": {
+          "type": "collection",
+          "settings": {
+            "collection": "ss26-clothing",
+            "custom_title": "Clothing"
+          }
+        },
+        "collection_CtHiGL": {
+          "type": "collection",
+          "settings": {
+            "collection": "jewellery",
+            "custom_title": "Jewellery"
+          }
+        }
+      },
+      "block_order": [
+        "collection_BcVk3y",
+        "collection_TWw6iF",
+        "collection_NU4PHg",
+        "collection_AJYXrC",
+        "collection_9RCGRK",
+        "collection_d9gaG6",
+        "collection_PiJiAm",
+        "collection_CtHiGL"
+      ],
+      "name": "BEALGND · Colecciones",
+      "settings": {
+        "color_scheme": "",
+        "show_title": true,
+        "title_size": 15,
+        "show_description": true,
+        "desc_size": 10,
+        "nav_size": 12,
+        "show_see_all": true,
+        "show_thumbs": true,
+        "see_all_text": "See all",
+        "see_all_link": "shopify://collections/all-products-1",
+        "padding_top": 16,
+        "padding_bottom": 0
+      }
+    },
+    "product-grid": {
+      "type": "main-collection-product-grid",
+      "settings": {
+        "products_per_page": 16,
+        "columns_desktop": 4,
+        "columns_mobile": "2",
+        "color_scheme": "scheme-1",
+        "image_ratio": "adapt",
+        "image_shape": "default",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "standard",
+        "enable_filtering": false,
+        "filter_type": "horizontal",
+        "enable_sorting": false,
+        "padding_top": 0,
+        "padding_bottom": 20
+      }
+    }
+  },
+  "order": [
+    "banner",
+    "bealgnd_banner_duo",
+    "bealgnd_collection_carousel_8ahfN8",
+    "product-grid"
+  ]
+}
