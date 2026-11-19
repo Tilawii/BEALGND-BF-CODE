@@ -1,0 +1,362 @@
+{%- comment -%}
+  BEALGND · Stories (historias tipo Instagram) — coverflow 3D progresivo
+{%- endcomment -%}
+
+{%- style -%}
+  .bea-st-section-{{ section.id }} {
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+    overflow: visible;
+  }
+  .bea-st__head { text-align: center; padding: 0 20px 18px 20px; }
+  .bea-st__title {
+    font-family: "Inter", sans-serif; font-size: 22px; font-weight: 500;
+    color: #121212; letter-spacing: -0.03em; line-height: 1.15; text-transform: none; margin: 0;
+  }
+  .bea-st__subtitle {
+    font-family: "Inter", sans-serif; font-size: 14px; font-weight: 400;
+    color: rgba(18,18,18,.5); letter-spacing: -0.03em; line-height: 1.3; text-transform: none; margin: 2px 0 0 0;
+  }
+
+  /* Prueba social */
+  .bea-st__social { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 14px 0; flex-wrap: wrap; }
+  .bea-st__avatars { display: flex; }
+  .bea-st__av { width: 26px; height: 26px; border-radius: 50%; background: #f0f0f0 center/cover no-repeat; border: 2px solid #fff; box-shadow: 0 0 0 0.5px rgba(0,0,0,.12); margin-left: -8px; }
+  .bea-st__av:first-child { margin-left: 0; }
+  .bea-st__rev { text-align: left; line-height: 1.15; }
+  .bea-st__stars { display: inline-flex; align-items: center; gap: 3px; }
+  .bea-st__stars svg { width: 14px; height: 14px; display: block; }
+  .bea-st__score { font-family: "Inter", sans-serif; font-size: 14px; font-weight: 600; color: #121212; letter-spacing: -0.03em; margin-left: 6px; }
+  .bea-st__revcount { display: block; font-family: "Inter", sans-serif; font-size: 12px; font-weight: 400; color: rgba(18,18,18,.5); letter-spacing: -0.03em; margin-top: 1px; }
+
+  .bea-st {
+    position: relative; display: flex; gap: 10px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
+    padding: 0 calc(50% - (var(--bea-st-w) / 2)); margin-top: 22px;
+    perspective: 1400px;
+  }
+  .bea-st::-webkit-scrollbar { display: none; }
+
+  .bea-st__item {
+    position: relative; flex: 0 0 var(--bea-st-w); width: var(--bea-st-w);
+    aspect-ratio: 9 / 16; scroll-snap-align: center;
+    border-radius: 16px; overflow: hidden; background: #1a1a1a;
+    transform-style: preserve-3d; will-change: transform, opacity;
+    /* el transform y opacity los pone el JS en cada frame */
+  }
+
+  .bea-st__media { position: absolute; inset: 0; }
+  .bea-st__media img, .bea-st__media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bea-st__scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 22%); pointer-events: none; }
+
+  .bea-st__placeholder { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 16px; background: #1a1a1a; color: rgba(255,255,255,.4); }
+  .bea-st__placeholder span { font-family: var(--font-body-family); font-size: 13px; }
+
+  .bea-st__bars { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 4; display: none; gap: 4px; }
+  .bea-st__item.is-active .bea-st__bars { display: flex; }
+  .bea-st__bar { flex: 1 1 0; height: 2.5px; border-radius: 100px; background: rgba(255,255,255,.35); overflow: hidden; }
+  .bea-st__bar > i { display: block; height: 100%; width: 100%; background: #fff; transform: scaleX(0); transform-origin: left center; }
+  .bea-st__bar.is-active > i { transform: scaleX(1); transition: transform var(--bea-st-speed, 5s) linear; }
+
+  .bea-st__ig { position: absolute; top: 18px; left: 10px; right: 10px; z-index: 4; display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity .3s ease; }
+  .bea-st__item.is-active .bea-st__ig { opacity: 1; }
+  .bea-st__avatar { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 30px; background: #ccc center/cover no-repeat; border: 1.5px solid rgba(255,255,255,.9); }
+  .bea-st__user { display: flex; align-items: center; gap: 4px; color: #fff; font-family: var(--font-body-family); font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .bea-st__verified { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+
+  .bea-st__tag { position: absolute; z-index: 5; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgba(255,255,255,.95); border: 2px solid rgba(0,0,0,.15); box-shadow: 0 2px 8px rgba(0,0,0,.35); display: block; }
+  .bea-st__tag::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgba(255,255,255,.6); animation: bea-st-pulse 1.8s ease-out infinite; }
+  @keyframes bea-st-pulse { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.4); opacity: 0; } }
+
+  @media screen and (min-width: 750px) {
+    .bea-st { gap: 16px; }
+    .bea-st__title { font-size: 28px; }
+    .bea-st__subtitle { font-size: 15px; }
+  }
+{%- endstyle -%}
+
+{%- capture verified_svg -%}
+<svg class="bea-st__verified" viewBox="0 0 24 24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#3897F0"/><path d="M10.4 15.2l-2.9-2.9 1.3-1.3 1.6 1.6 4.2-4.2 1.3 1.3z" fill="#fff"/></svg>
+{%- endcapture -%}
+{%- capture star_full -%}<svg viewBox="0 0 12 11" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#121212" d="M6 0L7.3471 4.1459H11.7063L8.1796 6.7082L9.5267 10.8541L6 8.2918L2.4733 10.8541L3.8204 6.7082L0.2937 4.1459H4.6529L6 0Z"/></svg>{%- endcapture -%}
+{%- capture star_empty -%}<svg viewBox="0 0 12 11" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="rgba(18,18,18,.2)" d="M6 0L7.3471 4.1459H11.7063L8.1796 6.7082L9.5267 10.8541L6 8.2918L2.4733 10.8541L3.8204 6.7082L0.2937 4.1459H4.6529L6 0Z"/></svg>{%- endcapture -%}
+
+{%- capture social_html -%}
+  {%- if section.settings.show_social -%}
+    <div class="bea-st__social">
+      <div class="bea-st__avatars">
+        {%- for n in (1..5) -%}
+          {%- assign a_key = 'avatar_' | append: n -%}{%- assign av = section.settings[a_key] -%}
+          {%- if av != blank -%}<span class="bea-st__av" style="background-image:url('{{ av | image_url: width: 80 }}');"></span>
+          {%- elsif n <= section.settings.avatar_count -%}<span class="bea-st__av"></span>{%- endif -%}
+        {%- endfor -%}
+      </div>
+      <div class="bea-st__rev">
+        <span class="bea-st__stars">
+          {%- for s in (1..5) -%}{%- if s <= section.settings.stars_full -%}{{ star_full }}{%- else -%}{{ star_empty }}{%- endif -%}{%- endfor -%}
+          {%- if section.settings.score != blank -%}<span class="bea-st__score">{{ section.settings.score }}</span>{%- endif -%}
+        </span>
+        {%- if section.settings.reviews_text != blank -%}<span class="bea-st__revcount">{{ section.settings.reviews_text }}</span>{%- endif -%}
+      </div>
+    </div>
+  {%- endif -%}
+{%- endcapture -%}
+
+<div class="bea-st-wrap bea-st--{{ section.id }} bea-st-section-{{ section.id }}">
+  {%- if section.settings.title != blank or section.settings.subtitle != blank or section.settings.show_social -%}
+    <div class="bea-st__head">
+      {{ social_html }}
+      {%- if section.settings.title != blank -%}<p class="bea-st__title">{{ section.settings.title }}</p>{%- endif -%}
+      {%- if section.settings.subtitle != blank -%}<p class="bea-st__subtitle">{{ section.settings.subtitle }}</p>{%- endif -%}
+    </div>
+  {%- endif -%}
+
+  <bealgnd-stories class="bea-st" data-speed="{{ section.settings.speed }}" data-count="{{ section.blocks.size }}"
+    style="--bea-st-w: {{ section.settings.item_width }}px; --bea-st-speed: {{ section.settings.speed }}s;">
+    {%- for block in section.blocks -%}
+      <div class="bea-st__item{% if forloop.first %} is-active{% endif %}" data-story {{ block.shopify_attributes }}>
+        <div class="bea-st__bars" data-bars><div class="bea-st__bar" data-bar><i></i></div></div>
+        <div class="bea-st__scrim"></div>
+        <div class="bea-st__ig">
+          <span class="bea-st__avatar"{% if block.settings.avatar != blank %} style="background-image:url('{{ block.settings.avatar | image_url: width: 90 }}');"{% endif %}></span>
+          <span class="bea-st__user">{{ block.settings.username | default: 'bealgnd' }}{% if block.settings.verified %}{{ verified_svg }}{% endif %}</span>
+        </div>
+        <div class="bea-st__media">
+          {%- if block.settings.video != blank -%}
+            {{ block.settings.video | video_tag: image_size: '1100x', autoplay: true, loop: true, muted: true, controls: false }}
+          {%- elsif block.settings.image != blank -%}
+            {{ block.settings.image | image_url: width: 1100 | image_tag: loading: 'lazy', sizes: '(min-width:750px) 320px, 70vw', widths: '320,480,640,900,1100' }}
+          {%- else -%}
+            <div class="bea-st__placeholder"><span>Imagen o vídeo</span></div>
+          {%- endif -%}
+        </div>
+        {%- for i in (1..3) -%}
+          {%- assign p_key = 'product_' | append: i -%}{%- assign x_key = 'x_' | append: i -%}{%- assign y_key = 'y_' | append: i -%}
+          {%- assign prod = block.settings[p_key] -%}
+          {%- if prod != blank -%}
+            <a class="bea-st__tag" href="{{ prod.url }}" style="left: {{ block.settings[x_key] }}%; top: {{ block.settings[y_key] }}%;" aria-label="{{ prod.title | escape }}"></a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endfor -%}
+  </bealgnd-stories>
+</div>
+
+<script>
+  if (!customElements.get('bealgnd-stories')) {
+    customElements.define('bealgnd-stories', class extends HTMLElement {
+      connectedCallback() {
+        this.real = Array.prototype.slice.call(this.querySelectorAll('[data-story]'));
+        this.count = this.real.length;
+        if (this.count < 1) return;
+        this.speed = (parseFloat(this.dataset.speed || '5')) * 1000;
+        this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.MAXROT = 24;   // grados máx de giro lateral
+        this.MINSCALE = 0.8;
+        this.MINOP = 0.38;
+        var self = this;
+
+        // Bucle infinito: 3 sets de clones a cada lado
+        if (this.count > 1) {
+          for (var s = 0; s < 3; s++) {
+            var fb = document.createDocumentFragment(), fa = document.createDocumentFragment();
+            this.real.forEach(function (n) {
+              var c1 = n.cloneNode(true); c1.setAttribute('data-clone','');
+              var c2 = n.cloneNode(true); c2.setAttribute('data-clone','');
+              fb.appendChild(c1); fa.appendChild(c2);
+            });
+            this.insertBefore(fb, this.firstChild); this.appendChild(fa);
+          }
+          this.sets = 3;
+        } else { this.sets = 0; }
+        this.items = Array.prototype.slice.call(this.querySelectorAll('[data-story]'));
+        this.baseOffset = this.count * this.sets;
+        this.index = this.baseOffset;
+
+        this.recenter(this.index, true);
+        this.render();                 // pinta transform inicial
+        this.markActive(this.index);
+        this.paintBars();
+
+        this._ticking = false;
+        this.addEventListener('scroll', function () {
+          if (!self._ticking) {
+            self._ticking = true;
+            requestAnimationFrame(function () { self.render(); self._ticking = false; });
+          }
+          if (self._snapping) { return; }
+          self.stopTimer();
+          clearTimeout(self._st);
+          self._st = setTimeout(function () { self.waitStill(); }, 40);
+        }, { passive: true });
+
+        if (!this.reduce) this.startTimer();
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) self.stopTimer();
+          else if (!self.reduce) { self.paintBars(); self.startTimer(); }
+        });
+        window.addEventListener('resize', function () { self.render(); });
+      }
+
+      // Aplica giro/escala/opacidad a cada historia según su distancia al centro
+      render() {
+        var center = this.scrollLeft + this.clientWidth / 2;
+        var w = this.items[0] ? this.items[0].offsetWidth : 1;
+        var self = this;
+        this.items.forEach(function (it) {
+          var mid = it.offsetLeft + it.offsetWidth / 2;
+          var dist = (mid - center) / (w + 10);   // -1 = una posición a la izquierda, +1 derecha
+          var d = Math.max(-1.6, Math.min(1.6, dist));
+          var rot = -d * self.MAXROT;              // gira mirando al centro
+          var t = Math.min(1, Math.abs(d));
+          var scale = 1 - (1 - self.MINSCALE) * t;
+          var op = 1 - (1 - self.MINOP) * t;
+          var origin = d > 0 ? 'left center' : 'right center';
+          it.style.transformOrigin = origin;
+          it.style.transform = 'scale(' + scale.toFixed(3) + ') rotateY(' + rot.toFixed(2) + 'deg)';
+          it.style.opacity = op.toFixed(3);
+          it.style.zIndex = (100 - Math.round(Math.abs(d) * 10)).toString();
+        });
+      }
+
+      markActive(i) {
+        this.items.forEach(function (it, k) { it.classList.toggle('is-active', k === i); });
+      }
+
+      waitStill() {
+        var self = this, l = this.scrollLeft;
+        if (l !== this._lastLeft) { this._lastLeft = l; clearTimeout(this._st); this._st = setTimeout(function () { self.waitStill(); }, 50); return; }
+        this.onSettle();
+      }
+
+      nearestIndex() {
+        var center = this.scrollLeft + this.clientWidth / 2, best = 0, bd = Infinity;
+        this.items.forEach(function (it, k) { var mid = it.offsetLeft + it.offsetWidth / 2, d = Math.abs(mid - center); if (d < bd) { bd = d; best = k; } });
+        return best;
+      }
+
+      onSettle() {
+        var raw = this.nearestIndex();
+        var i = raw;
+        var needJump = false;
+        if (this.count > 1) {
+          var low = this.count, high = this.items.length - this.count;
+          if (raw < low || raw >= high) {
+            while (i < low) { i += this.count; }
+            while (i >= high) { i -= this.count; }
+            needJump = true;
+          }
+        }
+        if (needJump) {
+          this.recenter(i, true);
+          this.render();
+        } else {
+          var it = this.items[i];
+          var target = it.offsetLeft - (this.clientWidth - it.offsetWidth) / 2;
+          if (Math.abs(this.scrollLeft - target) > 1) {
+            this._snapping = true;
+            this.scrollTo({ left: target, behavior: 'smooth' });
+            var self2 = this;
+            clearTimeout(this._snapTo);
+            this._snapTo = setTimeout(function () { self2._snapping = false; }, 500);
+          }
+        }
+        this.index = i;
+        this.markActive(i);
+        var realIdx = this.count > 1 ? (i % this.count) : i;
+        if (realIdx !== this._realPainted) { this.paintBars(); this._realPainted = realIdx; }
+        if (!this.reduce) this.startTimer();
+      }
+
+      recenter(i, instant) {
+        var it = this.items[i], left = it.offsetLeft - (this.clientWidth - it.offsetWidth) / 2;
+        if (instant) { var prev = this.style.scrollBehavior; this.style.scrollBehavior = 'auto'; this.scrollLeft = left; this._lastLeft = left; this.style.scrollBehavior = prev; }
+        else { this.scrollTo({ left: left, behavior: 'smooth' }); }
+      }
+
+      setActive(i, alreadyCentered) {
+        this.index = i;
+        this.markActive(i);
+        if (!alreadyCentered) this.recenter(i, false);
+        var realIdx = this.count > 1 ? (i % this.count) : i;
+        if (realIdx !== this._realPainted) { this.paintBars(); this._realPainted = realIdx; }
+        if (!this.reduce) this.startTimer();
+      }
+
+      paintBars() {
+        this.items.forEach(function (it) { var b = it.querySelector('[data-bar]'); if (b) b.classList.remove('is-active'); });
+        var b = this.items[this.index].querySelector('[data-bar]');
+        if (b && !this.reduce) { void b.offsetWidth; b.classList.add('is-active'); }
+      }
+
+      next() {
+        var i = this.index + 1;
+        if (this.count > 1 && i >= this.items.length - this.count) { i -= this.count; this.recenter(i, true); this.render(); }
+        this.setActive(i, false);
+      }
+
+      startTimer() { var self = this; this.stopTimer(); if (this.reduce) return; this._iv = setTimeout(function () { self.next(); }, this.speed); }
+      stopTimer() { if (this._iv) { clearTimeout(this._iv); this._iv = null; } }
+    });
+  }
+</script>
+
+{% schema %}
+{
+  "name": "BEALGND · Stories",
+  "tag": "section",
+  "class": "bea-st-section",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "Shop the community" },
+    { "type": "text", "id": "subtitle", "label": "Subtítulo", "default": "Real people, real drip — tap any look to shop it" },
+    { "type": "header", "content": "Prueba social" },
+    { "type": "checkbox", "id": "show_social", "label": "Mostrar prueba social", "default": true },
+    { "type": "range", "id": "avatar_count", "min": 0, "max": 5, "step": 1, "label": "Avatares grises (si no subes foto)", "default": 4 },
+    { "type": "image_picker", "id": "avatar_1", "label": "Avatar 1" },
+    { "type": "image_picker", "id": "avatar_2", "label": "Avatar 2" },
+    { "type": "image_picker", "id": "avatar_3", "label": "Avatar 3" },
+    { "type": "image_picker", "id": "avatar_4", "label": "Avatar 4" },
+    { "type": "image_picker", "id": "avatar_5", "label": "Avatar 5" },
+    { "type": "range", "id": "stars_full", "min": 0, "max": 5, "step": 1, "label": "Estrellas rellenas", "default": 5 },
+    { "type": "text", "id": "score", "label": "Nota", "default": "4.9/5" },
+    { "type": "text", "id": "reviews_text", "label": "Texto de reseñas", "default": "Based on 869 reviews" },
+    { "type": "header", "content": "Historias" },
+    { "type": "range", "id": "item_width", "min": 180, "max": 340, "step": 10, "unit": "px", "label": "Ancho de cada historia", "default": 240 },
+    { "type": "range", "id": "speed", "min": 2, "max": 10, "step": 1, "unit": "s", "label": "Segundos por historia", "default": 5 },
+    { "type": "header", "content": "Espaciado" },
+    { "type": "range", "id": "padding_top", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Espacio arriba", "default": 40 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Espacio abajo", "default": 40 }
+  ],
+  "blocks": [
+    {
+      "type": "story",
+      "name": "Historia",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Imagen" },
+        { "type": "video", "id": "video", "label": "Vídeo", "info": "Si pones vídeo, tiene prioridad sobre la imagen." },
+        { "type": "header", "content": "Cabecera (perfil)" },
+        { "type": "image_picker", "id": "avatar", "label": "Foto de perfil" },
+        { "type": "text", "id": "username", "label": "Usuario", "default": "bealgnd" },
+        { "type": "checkbox", "id": "verified", "label": "Verificado (tick azul)", "default": true },
+        { "type": "header", "content": "Producto etiquetado 1" },
+        { "type": "product", "id": "product_1", "label": "Producto" },
+        { "type": "range", "id": "x_1", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición X", "default": 50 },
+        { "type": "range", "id": "y_1", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición Y", "default": 55 },
+        { "type": "header", "content": "Producto etiquetado 2" },
+        { "type": "product", "id": "product_2", "label": "Producto" },
+        { "type": "range", "id": "x_2", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición X", "default": 50 },
+        { "type": "range", "id": "y_2", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición Y", "default": 55 },
+        { "type": "header", "content": "Producto etiquetado 3" },
+        { "type": "product", "id": "product_3", "label": "Producto" },
+        { "type": "range", "id": "x_3", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición X", "default": 50 },
+        { "type": "range", "id": "y_3", "min": 0, "max": 100, "step": 1, "unit": "%", "label": "Posición Y", "default": 55 }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [
+    { "name": "BEALGND · Stories", "blocks": [ { "type": "story" }, { "type": "story" }, { "type": "story" } ] }
+  ]
+}
+{% endschema %}

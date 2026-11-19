@@ -1,0 +1,69 @@
+{%- comment -%}
+  bea-sticky-atc.liquid · BEALGND · PDF Black Friday punto 5 (17 nov 2026)
+  Móvil (<750 px): botón fijo abajo con el texto y el precio del botón de compra (los copia tal cual,
+  así respeta la oferta, el 50 % y el modo Black Friday). Al tocarlo baja a las opciones de la oferta.
+  Sale solo cuando no se ven ni las opciones ni el botón de compra. No toca la lógica de la oferta ni el carrito.
+{%- endcomment -%}
+<style>
+  .bea-sticky{display:none;}
+  @media (max-width:749px){
+    .bea-sticky{display:block;position:fixed;left:0;right:0;bottom:0;z-index:90;background:#fff;border-top:1px solid #ececec;padding:10px 15px calc(10px + env(safe-area-inset-bottom));transform:translateY(110%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;font-family:'Inter',sans-serif;}
+    .bea-sticky.is-on{transform:none;visibility:visible;transition:transform .25s ease;}
+    .bea-sticky__btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:48px;margin:0;padding:0 18px;border:0;border-radius:6px;background:#121212;color:#fff;font-family:inherit;font-size:13px;font-weight:500;letter-spacing:-.01em;line-height:1.2;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    body.bea-bf .bea-sticky__btn:not(.is-off){background:var(--bea-bf,#B91C1C);}
+    .bea-sticky__btn.is-off{background:#9a9a9a;}
+    .bea-sticky__l{text-align:left;}
+    .bea-sticky__p{white-space:nowrap;font-weight:600;}
+    .bea-sticky__p s{color:rgba(255,255,255,.65);font-weight:400;}
+    body.bea-sticky-pad{padding-bottom:72px;}
+  }
+</style>
+<div class="bea-sticky" id="bea-sticky" aria-hidden="true">
+  <button type="button" class="bea-sticky__btn" tabindex="-1"><span class="bea-sticky__l"></span><span class="bea-sticky__p"></span></button>
+</div>
+<script>
+(function () {
+  var bar = document.getElementById('bea-sticky'); if (!bar) return;
+  var sb = bar.querySelector('.bea-sticky__btn'), lab = bar.querySelector('.bea-sticky__l'), pr = bar.querySelector('.bea-sticky__p');
+  var mq = window.matchMedia('(max-width: 749px)');
+  var vis = { btn: false, gi: false };
+  function mainBtn() { return document.querySelector('.product__info-container .product-form__submit') || document.querySelector('.product-form__submit'); }
+  function offer() { var g = document.querySelector('.bea-gi'); return (g && g.style.display !== 'none' && g.offsetParent !== null) ? g : null; }
+  function target() { return offer() || document.querySelector('.product__info-container .bea-sw, .product__info-container variant-selects') || mainBtn(); }
+  function sync() {
+    var b = mainBtn(); if (!b) return;
+    var l = b.querySelector('span:not(.bea-add-price):not(.loading__spinner)');
+    var t = l ? l.textContent.trim() : ''; if (lab.textContent !== t) lab.textContent = t;
+    var p = b.querySelector('.bea-add-price'); var h = p ? p.innerHTML : ''; if (pr.innerHTML !== h) pr.innerHTML = h;
+    sb.classList.toggle('is-off', !!b.disabled);
+  }
+  function upd() {
+    var on = mq.matches && !vis.btn && !vis.gi;
+    bar.classList.toggle('is-on', on); bar.setAttribute('aria-hidden', on ? 'false' : 'true'); sb.tabIndex = on ? 0 : -1;
+    document.body.classList.toggle('bea-sticky-pad', mq.matches);
+  }
+  function init() {
+    var b = mainBtn(); if (!b || bar.dataset.ready) return; bar.dataset.ready = '1';
+    sync();
+    new MutationObserver(sync).observe(b, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['disabled'] });
+    if ('IntersectionObserver' in window) {
+      var g = document.querySelector('.bea-gi');
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.target === b) vis.btn = e.isIntersecting; else vis.gi = e.isIntersecting && e.target.style.display !== 'none'; });
+        upd();
+      }, { rootMargin: '0px 0px -60px 0px' });
+      io.observe(b); if (g) io.observe(g);
+    }
+    upd();
+    if (mq.addEventListener) mq.addEventListener('change', upd);
+    sb.addEventListener('click', function () {
+      var t = target(); if (!t) return;
+      var hdr = document.querySelector('.section-header');
+      var off = (hdr ? hdr.getBoundingClientRect().height : 0) + 16;
+      window.scrollTo({ top: t.getBoundingClientRect().top + window.pageYOffset - off, behavior: 'smooth' });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('load', init);
+})();
+</script>

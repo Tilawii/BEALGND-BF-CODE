@@ -1,0 +1,164 @@
+{% doc %}
+  @prompt
+    Imagen
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-image-block-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__media {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    border-radius: {{ block.settings.corner_radius }}px;
+    line-height: 0;
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: {{ block.settings.fit }};
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__placeholder {
+    display: flex;
+    position: relative;
+    min-height: 240px;
+    align-items: center;
+    justify-content: center;
+    background: #f3f3f3;
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__placeholder svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 520px;
+    color: #777;
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__empty-state {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    margin: 0;
+    color: #333;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .ai-image-block-{{ ai_gen_id }}__caption {
+    margin: 12px 0 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: {{ block.settings.caption_alignment }};
+  }
+{% endstyle %}
+
+<div class="ai-image-block-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-image-block-{{ ai_gen_id }}__media">
+    {% if block.settings.image != blank %}
+      {% if block.settings.image_link != blank %}<a href="{{ block.settings.image_link }}" aria-label="{{ block.settings.image.alt | default: 'Abrir imagen' | escape }}">{% endif %}
+        <img
+          class="ai-image-block-{{ ai_gen_id }}__image"
+          src="{{ block.settings.image | image_url: width: 2400 }}"
+          alt="{{ block.settings.image.alt | escape }}"
+          loading="lazy"
+          width="{{ block.settings.image.width }}"
+          height="{{ block.settings.image.height }}"
+        >
+      {% if block.settings.image_link != blank %}</a>{% endif %}
+    {% else %}
+      <div class="ai-image-block-{{ ai_gen_id }}__placeholder">
+        {{ 'image' | placeholder_svg_tag }}
+        <p class="ai-image-block-{{ ai_gen_id }}__empty-state">Añade una imagen para mostrarla aquí.</p>
+      </div>
+    {% endif %}
+  </div>
+  {% if block.settings.caption != blank %}
+    <p class="ai-image-block-{{ ai_gen_id }}__caption">{{ block.settings.caption | escape }}</p>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "Imagen",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Imagen"
+    },
+    {
+      "type": "url",
+      "id": "image_link",
+      "label": "Enlace de imagen"
+    },
+    {
+      "type": "text",
+      "id": "caption",
+      "label": "Pie de imagen"
+    },
+    {
+      "type": "select",
+      "id": "fit",
+      "label": "Ajuste de imagen",
+      "options": [
+        { "value": "cover", "label": "Cubrir" },
+        { "value": "contain", "label": "Contener" }
+      ],
+      "default": "cover"
+    },
+    {
+      "type": "select",
+      "id": "caption_alignment",
+      "label": "Alineación del pie",
+      "options": [
+        { "value": "left", "label": "Izquierda" },
+        { "value": "center", "label": "Centro" },
+        { "value": "right", "label": "Derecha" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "corner_radius",
+      "label": "Radio de esquina",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Ancho en escritorio",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    }
+  ],
+  "presets": [
+    {
+      "name": "Imagen"
+    }
+  ],
+  "tag": null,
+  "class": "image-block"
+}
+{% endschema %}

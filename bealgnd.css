@@ -1,0 +1,599 @@
+/* ============================================
+   BEALGND · Estilos personalizados
+   ============================================ */
+
+/* ---------- HEADER ---------- */
+.header-wrapper {
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s ease;
+}
+.header__heading-link,
+.header__heading-link:hover,
+.header__icon,
+.header__icon:hover,
+.header__icon .icon,
+.header__icon svg,
+.header__inline-menu .header__menu-item,
+.header__inline-menu .header__menu-item:hover {
+  color: #121212;
+  transition: color 0.2s ease;
+}
+.header__heading-logo {
+  filter: invert(1);
+  transition: filter 0.2s ease;
+}
+.menu-drawer { color: #121212; }
+.header__icon--cart .icon { transform: scale(0.70); }
+
+/* ---------- HOME: header transparente sobre el hero ---------- */
+.bea-tpl-index .section-header { margin-bottom: -100px; }
+.bea-header-section { position: relative; z-index: 3; }
+.bea-tpl-index.bea-over-hero .header-wrapper {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+.bea-tpl-index.bea-over-hero .header__heading-link,
+.bea-tpl-index.bea-over-hero .header__icon,
+.bea-tpl-index.bea-over-hero .header__icon .icon,
+.bea-tpl-index.bea-over-hero .header__icon svg,
+.bea-tpl-index.bea-over-hero .header__inline-menu .header__menu-item {
+  color: #fff;
+}
+.bea-tpl-index.bea-over-hero .header__heading-logo { filter: none; }
+.bea-tpl-index.bea-over-hero .bea-header-section.shopify-section-header-hidden {
+  transform: none !important;
+}
+.bealgnd-announcement-section { border: 0 !important; box-shadow: none !important; }
+
+/* ============================================
+   FICHAS DE PRODUCTO
+   ============================================ */
+
+/* La zona de imagen SIEMPRE 4:5 (todas las tarjetas iguales) */
+.product-card-wrapper .card__inner {
+  aspect-ratio: 4 / 5 !important;
+  padding-bottom: 0 !important;
+  position: relative !important;
+}
+.product-card-wrapper .card__inner.ratio::before { content: none !important; }
+.product-card-wrapper .card__media {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+}
+
+/* Slider de imágenes (ocupa toda la caja 4:5) con inercia y snap suave */
+.bea-cardslider { position: absolute; inset: 0; overflow: hidden; }
+.bea-cardslider__track {
+  display: flex; height: 100%; margin: 0; padding: 0;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;   /* inercia en móvil */
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none; -ms-overflow-style: none;
+  cursor: grab;
+}
+.bea-cardslider__track:active { cursor: grabbing; }
+.bea-cardslider__track::-webkit-scrollbar { display: none; }
+.bea-cardslider__slide { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; }
+.bea-cardslider__link { display: block; width: 100%; height: 100%; }
+.bea-cardslider__slide img { width: 100%; height: 100%; object-fit: contain !important; display: block; }
+
+
+/* Barra de progreso: ancho completo, al pie de la imagen, dividida por Nº imágenes */
+.bea-cardslider__indicators {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; gap: 0; z-index: 2; pointer-events: none;
+}
+.bea-cardslider__indicator {
+  flex: 1 1 0; height: 2px;
+  background: rgba(18,18,18,.1);
+  transition: background-color .2s ease;
+}
+.bea-cardslider__indicator.is-active { background: rgba(18,18,18,.7); }
+
+/* Tarjeta plana */
+.product-card-wrapper .card,
+.product-card-wrapper .card__inner {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.product-card-wrapper .card { position: relative !important; }
+
+/* Grid a 1px */
+.product-grid { column-gap: 1px !important; row-gap: 24px !important; }
+
+/* TODO el texto a ras del borde izquierdo de la imagen (sin sangría) */
+.product-card-wrapper .card__content,
+.product-card-wrapper .card__information,
+.product-card-wrapper .card-information {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+}
+.product-card-wrapper .card__content { padding: 8px 0 0 0 !important; }
+.product-card-wrapper .card__information { padding-top: 0 !important; }
+
+/* Nombre: 12px / 500 / una línea con "…" */
+.product-card-wrapper .card__heading { margin: 0 0 4px !important; font-size: 12px !important; line-height: 1.3 !important; }
+.product-card-wrapper .card__heading a {
+  display: block !important;
+  font-size: 12px !important; font-weight: 500 !important; color: #121212 !important;
+  letter-spacing: -0.03em !important; text-transform: none !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+}
+
+/* Subheading: color + N Colors */
+.product-card-wrapper .bea-card__subheading {
+  padding: 0 !important;
+  margin: 0 0 4px 0 !important;
+  font-size: 12px !important; line-height: 1.3 !important;
+  letter-spacing: -0.03em !important; color: rgba(18,18,18,.5) !important;
+  text-align: left !important;
+}
+.product-card-wrapper .bea-card__color { font-weight: 500 !important; }
+.product-card-wrapper .bea-card__count { font-weight: 400 !important; margin-left: 4px !important; }
+
+/* Precio 12px/500 */
+.product-card-wrapper .price { font-size: 12px !important; }
+.product-card-wrapper .price .price-item {
+  font-size: 12px !important; font-weight: 500 !important; color: #121212 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Botón "+" — fino, gris, sin caja ni bordes */
+.product-card-wrapper .card__media > .quick-add {
+  position: absolute !important;
+  right: 8px !important; bottom: 8px !important;
+  top: auto !important; left: auto !important;
+  width: 28px !important; height: 28px !important;
+  margin: 0 !important; padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important; box-shadow: none !important;
+  z-index: 4;
+}
+.product-card-wrapper .quick-add__submit,
+.product-card-wrapper .quick-add .button,
+.product-card-wrapper .quick-add product-form,
+.product-card-wrapper .quick-add form {
+  width: 28px !important; min-width: 0 !important;
+  height: 28px !important; min-height: 0 !important;
+  padding: 0 !important; margin: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  font-size: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.product-card-wrapper .quick-add__submit:hover,
+.product-card-wrapper .quick-add__submit:focus,
+.product-card-wrapper .quick-add__submit:active {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+.product-card-wrapper .quick-add__submit::before {
+  content: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.product-card-wrapper .quick-add__submit::after {
+  content: "+";
+  font-size: 24px !important;
+  font-weight: 300 !important;
+  line-height: 1 !important;
+  color: #6b6b6b !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  background: transparent !important;
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.product-card-wrapper .quick-add__submit .icon,
+.product-card-wrapper .quick-add__submit svg,
+.product-card-wrapper .quick-add__submit span { display: none !important; }
+
+/* Evitar solape de textos entre columnas */
+.product-grid > .grid__item { min-width: 0 !important; overflow: hidden; }
+.product-card-wrapper,
+.product-card-wrapper .card,
+.product-card-wrapper .card__content,
+.product-card-wrapper .card__information { min-width: 0 !important; max-width: 100% !important; }
+.product-card-wrapper .card__heading a { max-width: 100% !important; }
+
+/* ---- Permitir arrastrar/deslizar el slider (capas de Dawn por encima) ---- */
+/* Desactivar el overlay "toda la card clicable" que bloqueaba el gesto */
+.product-card-wrapper .card a.full-unstyled-link::after { pointer-events: none !important; }
+/* Que la capa de contenido interna deje pasar el puntero al slider */
+.product-card-wrapper .card__inner > .card__content { pointer-events: none; }
+/* …pero manteniendo clicables los elementos reales (título, botones, badges) */
+.product-card-wrapper .card__inner > .card__content a,
+.product-card-wrapper .card__inner > .card__content button,
+.product-card-wrapper .card__inner > .card__content .quick-add,
+.product-card-wrapper .card__inner > .card__content input,
+.product-card-wrapper .card__inner > .card__content label { pointer-events: auto; }
+/* El slider recibe los gestos */
+.bea-cardslider,
+.bea-cardslider__track { pointer-events: auto !important; }
+/* El enlace del título sí funciona (para entrar al producto) */
+.product-card-wrapper .card__content .card__heading a { pointer-events: auto !important; }
+
+/* Ocultar el contador "1/7" y las flechas del carrusel de colección destacada */
+.slider-buttons,
+.slider-counter {
+  display: none !important;
+}
+
+/* ===== Cabecera de colección (New Arrivals / filtros) estilo Figma ===== */
+.collection-hero__title-wrapper { display: flex; align-items: flex-start; gap: 4px; }
+.collection-hero__title,
+.collection__title.title {
+  font-family: "Inter", sans-serif !important;
+  font-size: 14px !important; font-weight: 500 !important;
+  color: #121212 !important; letter-spacing: -0.03em !important;
+  line-height: 18.2px !important; text-transform: none !important;
+  text-align: left !important; margin: 0 !important;
+}
+.collection-hero__product-count {
+  font-family: "Inter", sans-serif !important;
+  font-size: 10px !important; font-weight: 500 !important;
+  color: rgba(18,18,18,.4) !important; letter-spacing: -0.03em !important;
+  line-height: 12px !important; margin-top: 1px;
+}
+.collection-hero__description,
+.collection-hero__description.rte {
+  font-family: "Inter", sans-serif !important;
+  font-size: 10px !important; font-weight: 300 !important;
+  color: rgba(18,18,18,.5) !important; letter-spacing: -0.03em !important;
+  line-height: 12px !important; text-transform: none !important;
+  margin-top: 3px !important;
+}
+
+/* Fila de filtros: Filter (icono) · badge · Reset */
+.mobile-facets__open-wrapper,
+.facets__form,
+.facets-container { align-items: center; }
+.mobile-facets__open-label,
+.facets__label {
+  font-family: "Inter", sans-serif !important;
+  font-size: 12px !important; font-weight: 400 !important;
+  color: rgba(18,18,18,.85) !important; letter-spacing: -0.03em !important;
+  text-transform: none !important; text-decoration: none !important;
+}
+.mobile-facets__open svg,
+.mobile-facets__open .icon { width: 15px !important; height: 15px !important; color: rgba(18,18,18,.85); }
+.mobile-facets__count,
+.mobile-facets__open-wrapper > span {
+  width: 15px !important; height: 15px !important;
+  background: rgba(18,18,18,.5) !important; border-radius: 9999px !important;
+  color: #fff !important; font-size: 9px !important; font-weight: 500 !important;
+  display: inline-flex !important; align-items: center; justify-content: center;
+  margin-left: 3px;
+}
+.facets__reset,
+.facets__reset.link {
+  font-family: "Inter", sans-serif !important;
+  font-size: 10px !important; font-weight: 400 !important;
+  color: rgba(18,18,18,.85) !important; letter-spacing: -0.03em !important;
+  text-decoration: underline !important; text-underline-offset: 3px !important;
+}
+
+/* ============================================
+   GALERÍA DE PRODUCTO (estilo Figma)
+   ============================================ */
+
+/* --- Imagen a ancho completo: sin márgenes, padding ni gaps --- */
+.bea-tpl-product .product__media-wrapper,
+.bea-tpl-product .product__column-sticky { margin: 0 !important; padding: 0 !important; }
+.bea-tpl-product .product .grid,
+.bea-tpl-product .product__media-list.slider,
+.bea-tpl-product .product__media-list {
+  margin: 0 !important; padding: 0 !important; gap: 0 !important;
+  overflow-y: hidden !important;
+  /* pan-x pan-y: el carrusel desliza en horizontal y el dedo hacia arriba sigue bajando la pagina */
+  touch-action: pan-x pan-y !important;
+  overscroll-behavior-x: contain !important;
+}
+.bea-tpl-product .product__media-list .slider__slide { padding: 0 !important; margin: 0 !important; }
+.bea-tpl-product .slider-mobile-gutter { padding: 0 !important; }
+.bea-tpl-product .product { padding-top: 0 !important; }
+.bea-tpl-product #MainContent { margin-top: 0 !important; }
+
+/* --- Todas las imágenes con el MISMO formato (ratio fijo 4:5 + cover) --- */
+.bea-tpl-product .product__media-item .product-media-container {
+  aspect-ratio: 4 / 5 !important;
+  background: #fafafa !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.bea-tpl-product .product__media-item .product-media-container::before { content: none !important; }
+.bea-tpl-product .product__media-item .media,
+.bea-tpl-product .product__media-item .media img {
+  width: 100% !important; height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+}
+
+/* Quitar líneas/bordes entre imágenes de la galería */
+.bea-tpl-product .product__media-item,
+.bea-tpl-product .product__media-item .product-media-container,
+.bea-tpl-product .product__media-item .media {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+.bea-tpl-product .product__media-list { border: 0 !important; }
+
+/* --- Ocultar el contador "1/5" y la lupa de zoom --- */
+.bea-tpl-product .slider-counter,
+.bea-tpl-product media-gallery .slider-counter { display: none !important; }
+.bea-tpl-product .product__media-icon,
+.bea-tpl-product .product__media-zoom-none,
+.bea-tpl-product .product__media-toggle { display: none !important; }
+
+/* --- Barra de segmentos: pegada a la imagen, ancho completo, sin gaps --- */
+.bea-gallery-bars {
+  display: flex; gap: 0;
+  width: 100vw; max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: 0;
+}
+.bea-gallery-bar {
+  flex: 1 1 0; height: 2px; border-radius: 0;
+  background: #e7e7e7; transition: background-color .25s ease;
+}
+.bea-gallery-bar.is-active { background: #585858; }
+@media screen and (min-width: 750px) { .bea-gallery-bars { display: none; } }
+
+/* --- Header transparente sobre la galería en producto (iconos oscuros) --- */
+.bea-tpl-product.bea-over-hero .header-wrapper { background: transparent; border-bottom-color: transparent; }
+.bea-tpl-product.bea-over-hero .header__heading-link,
+.bea-tpl-product.bea-over-hero .header__icon,
+.bea-tpl-product.bea-over-hero .header__icon .icon,
+.bea-tpl-product.bea-over-hero .header__icon svg,
+.bea-tpl-product.bea-over-hero .header__inline-menu .header__menu-item { color: #121212; }
+
+/* ============================================
+   PÁGINA DE PRODUCTO · info (título + add to cart)
+   ============================================ */
+
+/* Título del producto */
+.bea-tpl-product .product__title,
+.bea-tpl-product .product__title h1 {
+  font-family: "Inter", sans-serif !important;
+  font-size: 20px !important; font-weight: 400 !important;
+  letter-spacing: -0.03em !important; color: #121212 !important;
+  text-transform: none !important; line-height: 1.2 !important;
+  margin-top: 20px !important;
+}
+
+/* Ocultar el precio original (debajo del título): se ve solo en el botón */
+.bea-tpl-product .product__info-container .price,
+.bea-tpl-product .no-js-inline .price,
+.bea-tpl-product .product__info-wrapper > .price { display: none !important; }
+
+/* Botón Add to cart: negro, radio 4px, con precio a la derecha */
+.bea-tpl-product .product-form__buttons .product-form__submit,
+.bea-tpl-product .product-form__buttons .button {
+  background: #121212 !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  min-height: 47px !important;
+  font-family: "Inter", sans-serif !important;
+  font-size: 12px !important; font-weight: 600 !important;
+  letter-spacing: -0.03em !important;
+  display: flex !important; align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 20px !important;
+  text-transform: none !important;
+}
+.bea-tpl-product .product-form__buttons .product-form__submit::before,
+.bea-tpl-product .product-form__buttons .product-form__submit::after { box-shadow: none !important; }
+
+/* El precio dentro del botón (lo inyecta el JS) */
+.bea-add-price {
+  font-family: "Inter", sans-serif !important;
+  font-weight: 500 !important; font-size: 12px !important;
+  letter-spacing: -0.03em !important; margin-left: auto;
+}
+
+/* Ocultar "Taxes included. Shipping calculated at checkout" */
+.bea-tpl-product .product__tax,
+.bea-tpl-product .product__tax.caption,
+.bea-tpl-product .product__info-container .rte--product { display: none !important; }
+
+/* ============================================
+   PÁGINA DE PRODUCTO · Swatches de color (imagen)
+   ============================================ */
+
+/* Cabecera "Select color · Nº · Nombre" */
+.bea-tpl-product .bea-swatches legend,
+.bea-tpl-product .bea-swatches .form__label {
+  margin: 0 0 10px 0 !important;
+  width: 100%;
+}
+.bea-swatches__head { display: inline-flex; align-items: baseline; gap: 6px; font-family: "Inter", sans-serif; }
+.bea-swatches__title { font-size: 13px; font-weight: 500; color: #121212; letter-spacing: -0.03em; }
+.bea-swatches__count { font-size: 9px; font-weight: 500; color: #888; letter-spacing: -0.03em; position: relative; top: -4px; }
+.bea-swatches__value { font-size: 13px; font-weight: 400; color: #888; letter-spacing: -0.03em; margin-left: 4px; }
+
+/* Contenedor de swatches en fila */
+.bea-tpl-product .bea-swatches {
+  display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 18px 0 0 0;
+}
+
+/* Cada swatch = cuadro 70x70 con la imagen de la variante */
+.bea-tpl-product .bea-swatches label {
+  width: 70px; height: 70px;
+  border-radius: 6px;
+  background-color: #fafafa;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0 !important;
+  color: transparent !important;
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  margin: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+/* Swatch seleccionado: borde de énfasis */
+.bea-tpl-product .bea-swatches input:checked + label {
+  border-color: #121212;
+  box-shadow: 0 0 0 1px #121212;
+}
+
+/* Ocultar el input radio */
+.bea-tpl-product .bea-swatches input[type="radio"] {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+
+/* No disponible */
+.bea-tpl-product .bea-swatches label .label-unavailable { display: none; }
+.bea-tpl-product .bea-swatches input:disabled + label { opacity: .4; }
+
+.shopify-payment-button__more-options{ display:none !important; }
+
+/* Klarna: quitar la caja del mensaje a plazos */
+klarna-placement::part(osm-container) {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Klarna: pegar el mensaje al botón de arriba */
+.shopify-block:has(klarna-placement) {
+  margin-top: -20px !important;
+}
+
+.bea-tpl-product .product-form__buttons {
+  max-width: none;
+}
+
+/* ===== Banner de cookies con el look del menú lateral (glass) ===== */
+#shopify-pc__banner .shopify-pc__banner__dialog {
+  background: rgba(255,255,255,.75) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.12) !important;
+  margin: 12px !important;
+  width: auto !important;
+  max-width: none !important;
+  font-family: 'Inter', sans-serif !important;
+  color: #121212 !important;
+}
+
+@media (max-width: 749px) {
+  .shopify-pc__banner__body p {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    margin: 6px 0 0 !important;
+  }
+  #shopify-pc__banner .shopify-pc__banner__dialog { padding: 16px !important; }
+  .shopify-pc__banner__body-title { font-size: 14px !important; }
+  .shopify-pc__banner__btns { margin-top: 10px !important; gap: 8px !important; }
+}
+
+/* Desplegables del menú: el texto usa siempre el color del esquema oscuro del submenú,
+   no el negro de la cabecera clara (evita el texto gris ilegible fuera de la home) */
+.header__inline-menu .header__submenu .header__menu-item {
+  color: rgba(var(--color-foreground), .75);
+}
+.header__inline-menu .header__submenu .header__menu-item:hover,
+.header__inline-menu .header__submenu .list-menu__item--active {
+  color: rgb(var(--color-foreground));
+}
+
+/* ===== Rejilla de producto (nov 2026): etiqueta de oferta, linea de progreso igual en todas las tarjetas, rejillas a todo el ancho en ordenador ===== */
+.bea-card__offer { position: absolute; top: 10px; left: 10px; z-index: 3; background: #fff; color: #218519; font-size: 10px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; padding: 4px 7px; border-radius: 3px; pointer-events: none; white-space: nowrap; }
+.card__inner:not(:has(.bea-cardslider__indicators))::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(18, 18, 18, 0.1); z-index: 2; pointer-events: none; }
+@media screen and (min-width: 990px) { .bea-card__offer { top: 12px; left: 12px; font-size: 11px; padding: 5px 9px; } .bea-tpl-collection .collection.page-width { max-width: none; padding-left: 0; padding-right: 0; } .product-grid { --grid-desktop-horizontal-spacing: 2px; column-gap: 2px; } .product-grid .card__information { padding-left: 12px !important; padding-right: 12px !important; } }
+@media screen and (min-width: 990px) { .bea-duo-section .bea-duo { max-width: none !important; padding: 0 32px !important; --bea-duo-h-d: 380px !important; }}
+@media screen and (min-width: 990px) { .bea-colhead__title, .bea-colhead__desc { padding-left: 32px !important; padding-right: 32px !important; } }
+@media screen and (min-width: 990px) { .bea-set { max-width: none !important; padding-left: 32px !important; padding-right: 32px !important; } .bea-set__header, .bea-set__wizbar, .bea-set__panel-hint, .bea-set__trust, .bea-set__faq { max-width: 648px; margin-left: auto; margin-right: auto; } .bea-set__grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } }
+.bea-card__offer { background: #eef6ec; }
+@media screen and (min-width: 990px) { .product-grid { --grid-desktop-horizontal-spacing: 2px !important; column-gap: 2px !important; } .slider-component-full-width.page-width { padding-left: 0 !important; padding-right: 0 !important; } }
+@media screen and (min-width: 990px) { .bea-set__header, .bea-set__wizbar, .bea-set__panel-hint, .bea-set__trust, .bea-set__faq { margin-left: auto !important; margin-right: auto !important; } }
+@media screen and (min-width: 990px) { .bea-ficha-relacionados .page-width { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; } .bea-rel__row { gap: 2px !important; } .bea-rel .card__information { padding-left: 12px !important; padding-right: 12px !important; } }
+@media screen and (min-width: 990px) { .bea-ficha-relacionados .bea-rel .bea-rel__row { gap: 2px !important; } }
+/* Tarjetas de una sola foto: misma linea gris que las de varias fotos (la regla anterior en .card__inner la pisaba Dawn) */
+.card__media:not(:has(.bea-cardslider__indicators))::after { content: ''; position: absolute; left: 0; right: 0; top: auto; bottom: 0; height: 2px; background: rgba(18, 18, 18, 0.1); z-index: 2; pointer-events: none; }
+
+/* ==========================================================================
+   BEALGND (8 nov 2026) · Footer escritorio estilo Make It Shine (solo >=990px).
+   Izquierda: Newsletter + campo + redes + ©. Derecha: desplegables + idioma.
+   © e idioma siempre en la misma linea. Movil sin cambios.
+   ========================================================================== */
+@media screen and (min-width: 990px) {
+  .bea-ft-section .bea-ft { padding-bottom: 0; }
+  .bea-ft-section .bea-ft__inner {
+    max-width: none;
+    margin: 0;
+    padding: 40px 56px 64px 30px;
+    display: grid;
+    grid-template-columns: 390px minmax(0, 1fr) 418px;
+    grid-template-rows: auto auto auto 1fr auto;
+    align-items: start;
+  }
+  .bea-ft-section .bea-ft__logo { display: none; }
+  .bea-ft-section .bea-ft__nl-label { grid-column: 1; grid-row: 1; text-align: left; font-size: 13px; margin: 0; }
+  .bea-ft-section .bea-ft__nl-title {
+    display: block;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    color: rgb(var(--color-foreground));
+  }
+  .bea-ft-section .bea-ft__nl { grid-column: 1; grid-row: 2; margin: 22px 0 0; }
+  .bea-ft-section .bea-ft__social { grid-column: 1; grid-row: 3; justify-content: flex-start; gap: 58px; margin: 34px 0 0; }
+  .bea-ft-section .bea-ft__acc { grid-column: 3; grid-row: 1 / 5; margin: 0; }
+  .bea-ft-section .bea-ft__acc summary { padding-top: 0; padding-bottom: 0; min-height: 38px; align-items: center; font-size: 15px; margin-top: -9px; }
+  .bea-ft-section .bea-ft__acc details + details summary { margin-top: 0; }
+  .bea-ft-section .bea-ft__copy { grid-column: 1; grid-row: 5; margin-top: 46px; font-size: 13px; }
+  .bea-ft-section .bea-ft__loc { grid-column: 3; grid-row: 5; margin-top: 46px; justify-content: space-between; align-items: flex-start; }
+}
+
+/* Footer escritorio: titulos de desplegables y "+" mas finos (8 nov 2026) */
+@media screen and (min-width: 990px) {
+  .bea-ft-section .bea-ft__acc summary span { font-weight: 400; }
+  .bea-ft-section .bea-ft__pm::before { height: 1px; }
+  .bea-ft-section .bea-ft__pm::after { width: 1px; }
+}
+
+
+/* BEALGND (nov 2026) · Etiqueta de descuento en tarjetas: arriba a la izquierda, a 10 px, mismo formato que el sistema de etiquetas */
+.card__inner .bea-pct { position: absolute; top: 10px; left: 10px; z-index: 3; display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 4px; background: var(--bea-bf, #B91C1C); color: #fff; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; line-height: 12px; letter-spacing: 0; white-space: nowrap; pointer-events: none; }
+
+
+/* Fix 11-nov: la barra de anuncios (z-index 4) quedaba por encima del menú lateral (header z-index 3). Con el menú abierto, el header sube por encima. */
+body:has(#Details-menu-drawer-container[open]) .section-header{z-index:5}

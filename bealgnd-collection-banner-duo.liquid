@@ -1,0 +1,237 @@
+{%- liquid
+  # BEALGND · Black Friday: mismo cálculo que layout/theme.liquid
+  assign bea_bf_end = settings.bf_end | date: '%s' | plus: 0
+  assign bea_bf_now = 'now' | date: '%s' | plus: 0
+  assign bea_bf_live = false
+  if settings.bf_enabled
+    assign bea_bf_live = true
+    if settings.bf_hide_after_end and bea_bf_end > 0 and bea_bf_now >= bea_bf_end
+      assign bea_bf_live = false
+    endif
+  endif
+-%}
+{%- comment -%}
+  BEALGND · Banner de colección (1 o 2 fotos)
+  - 2 fotos: se ven lado a lado. 1 foto: ocupa todo el ancho.
+  - Misma composición en móvil y en ordenador.
+  - Etiqueta de oferta opcional (interruptor + texto).
+{%- endcomment -%}
+
+{%- liquid
+  assign img1 = section.settings.image_1
+  assign img2 = section.settings.image_2
+  if img1 == blank and img2 != blank
+    assign img1 = img2
+    assign img2 = nil
+  endif
+-%}
+
+{%- liquid
+  # Black Friday: A = bloque rojo grande · B = fotos + franja roja debajo
+  assign bf_mode = 'off'
+  if bea_bf_live and section.settings.bf_mode != 'off'
+    assign bf_mode = section.settings.bf_mode
+    if bf_mode == 'auto'
+      assign bf_a_list = settings.bf_a_handles | remove: ' ' | split: ','
+      if bf_a_list contains collection.handle
+        assign bf_mode = 'a'
+      else
+        assign bf_mode = 'b'
+      endif
+    endif
+  endif
+-%}
+{%- if bf_mode == 'a' -%}
+  <div class="bea-bf-a-wrap" data-bea-bf style="max-width: {{ settings.page_width | default: 1200 }}px; margin: {{ section.settings.margin_top }}px auto {{ section.settings.margin_bottom }}px;">
+    <div class="bea-bf-a">
+      <div class="bea-bf-a__l">
+        <h2 class="bea-bf-a__t">{{ settings.bf_a_title | escape }}</h2>
+        <p class="bea-bf-a__s">
+          <span class="bea-bf-a__s-d">{{ settings.bf_a_sub | escape }}</span>
+          <span class="bea-bf-a__s-m">{{ settings.bf_a_sub_mobile | escape }}<span data-bea-bf-cd-wrap> · {{ settings.bf_pdp_ends | escape }} {% render 'bea-bf-cd', fmt: 'words' %}</span></span>
+        </p>
+        {%- if settings.bf_a_link_label != blank -%}
+          <a class="bea-bf-a__link" href="#ProductGridContainer">{{ settings.bf_a_link_label | escape }}</a>
+        {%- endif -%}
+      </div>
+      <div class="bea-bf-a__r" data-bea-bf-cd-wrap>
+        <span class="bea-bf-a__lbl">{{ settings.bf_ends_label | escape }}</span>
+        {% render 'bea-bf-cd', fmt: 'blocks' %}
+      </div>
+    </div>
+  </div>
+{%- endif -%}
+{%- if img1 != blank -%}
+  <style>
+    #bea-duo-{{ section.id }} {
+      --bea-duo-h-d: {{ section.settings.height_desktop }}px;
+      --bea-duo-h-m: {{ section.settings.height_mobile }}px;
+      --bea-duo-gap: {{ section.settings.gap }}px;
+      max-width: {{ settings.page_width | default: 1200 }}px;
+      margin: {{ section.settings.margin_top }}px auto {{ section.settings.margin_bottom }}px;
+      padding: 0 1.5rem;
+      box-sizing: border-box;
+    }
+    #bea-duo-{{ section.id }} .bea-duo__media {
+      position: relative;
+      display: flex;
+      gap: var(--bea-duo-gap);
+      height: var(--bea-duo-h-d);
+      border-radius: 12px;
+      overflow: hidden;
+      text-decoration: none;
+    }
+    #bea-duo-{{ section.id }} .bea-duo__photo {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 100%;
+    }
+    #bea-duo-{{ section.id }} .bea-duo__photo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #bea-duo-{{ section.id }} .bea-duo__tag {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.75);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      color: #121212;
+      font-family: Inter, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 12px;
+      letter-spacing: -0.36px;
+      white-space: nowrap;
+    }
+    #bea-duo-{{ section.id }} .bea-duo__tag svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+    }
+    @media screen and (max-width: 749px) {
+      #bea-duo-{{ section.id }} {
+        padding: 0 12px;
+      }
+      #bea-duo-{{ section.id }} .bea-duo__media {
+        height: var(--bea-duo-h-m);
+      }
+      #bea-duo-{{ section.id }} .bea-duo__tag {
+        right: 10px;
+        bottom: 10px;
+      }
+    }
+  </style>
+
+  <div class="bea-duo" id="bea-duo-{{ section.id }}"{% if bf_mode == 'a' %} data-bea-bf-off hidden{% endif %}>
+    {%- if section.settings.link != blank -%}
+      <a href="{{ section.settings.link }}" class="bea-duo__media">
+    {%- else -%}
+      <div class="bea-duo__media">
+    {%- endif -%}
+
+    {%- if img2 != blank -%}
+      {%- assign img_sizes = '(min-width: 1200px) 585px, 50vw' -%}
+    {%- else -%}
+      {%- assign img_sizes = '(min-width: 1200px) 1170px, 100vw' -%}
+    {%- endif -%}
+
+    {%- assign pos1 = img1.presentation.focal_point | default: 'center' | prepend: 'object-position: ' -%}
+    <div class="bea-duo__photo">
+      {{
+        img1
+        | image_url: width: 2400
+        | image_tag:
+          loading: 'eager',
+          fetchpriority: 'high',
+          widths: '400, 600, 800, 1000, 1200, 1600, 2000, 2400',
+          sizes: img_sizes,
+          alt: img1.alt,
+          style: pos1
+      }}
+    </div>
+
+    {%- if img2 != blank -%}
+      {%- assign pos2 = img2.presentation.focal_point | default: 'center' | prepend: 'object-position: ' -%}
+      <div class="bea-duo__photo">
+        {{
+          img2
+          | image_url: width: 1600
+          | image_tag:
+            loading: 'eager',
+            widths: '400, 600, 800, 1000, 1200, 1600',
+            sizes: img_sizes,
+            alt: img2.alt,
+            style: pos2
+        }}
+      </div>
+    {%- endif -%}
+
+    {%- if section.settings.show_tag and section.settings.tag_text != blank -%}
+      <span class="bea-duo__tag"{% if bf_mode == 'b' %} data-bea-bf-off hidden{% endif %}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 12 20 22 4 22 4 12"></polyline>
+          <rect x="2" y="7" width="20" height="5"></rect>
+          <line x1="12" y1="22" x2="12" y2="7"></line>
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+        </svg>
+        {{ section.settings.tag_text | escape }}
+      </span>
+    {%- endif -%}
+
+    {%- if section.settings.link != blank -%}
+      </a>
+    {%- else -%}
+      </div>
+    {%- endif -%}
+      {%- if bf_mode == 'b' -%}
+        <a class="bea-bf-strip" data-bea-bf href="{{ settings.bf_b_link | default: routes.all_products_collection_url }}">
+          <span class="bea-bf-strip__l">{{ settings.bf_b_text | escape }}</span>
+          <span class="bea-bf-strip__r" data-bea-bf-cd-wrap><span class="bea-bf-strip__lbl">{{ settings.bf_pdp_ends | escape }}</span>{% render 'bea-bf-cd', fmt: 'colon' %}<span class="bea-bf-strip__arrow">&nbsp; →</span></span>
+        </a>
+      {%- endif -%}
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "BEALGND Banner 2 fotos",
+  "tag": "section",
+  "class": "section bea-duo-section",
+  "settings": [
+    { "type": "paragraph", "content": "Banner de la colección. Con 2 fotos se ven lado a lado; con 1 sola, ocupa todo el ancho. Se ve igual en móvil y en ordenador." },
+    { "type": "image_picker", "id": "image_1", "label": "Foto izquierda" },
+    { "type": "image_picker", "id": "image_2", "label": "Foto derecha (opcional)", "info": "Déjala vacía para usar una sola foto a todo el ancho." },
+    { "type": "url", "id": "link", "label": "Enlace (opcional)" },
+    { "type": "header", "content": "Etiqueta de oferta" },
+    { "type": "checkbox", "id": "show_tag", "label": "Mostrar etiqueta", "default": true },
+    { "type": "text", "id": "tag_text", "label": "Texto de la etiqueta", "default": "Buy 1, get 1 free" },
+    { "type": "header", "content": "Tamaño" },
+    { "type": "range", "id": "height_desktop", "min": 200, "max": 600, "step": 10, "unit": "px", "label": "Alto en ordenador", "default": 320 },
+    { "type": "range", "id": "height_mobile", "min": 100, "max": 400, "step": 4, "unit": "px", "label": "Alto en móvil", "default": 152 },
+    { "type": "range", "id": "gap", "min": 0, "max": 12, "step": 1, "unit": "px", "label": "Separación entre fotos", "default": 3 },
+    { "type": "header", "content": "Márgenes" },
+    { "type": "range", "id": "margin_top", "min": 0, "max": 80, "step": 2, "unit": "px", "label": "Margen superior", "default": 0 },
+    { "type": "range", "id": "margin_bottom", "min": 0, "max": 80, "step": 2, "unit": "px", "label": "Margen inferior", "default": 16 },
+      { "type": "header", "content": "Black Friday" },
+      { "type": "select", "id": "bf_mode", "label": "En modo Black Friday", "info": "Automático: A en las colecciones indicadas en los ajustes del tema (Black Friday) y B en el resto.", "options": [
+        { "value": "auto", "label": "Automático (A o B según los ajustes del tema)" },
+        { "value": "a", "label": "A · Bloque rojo grande" },
+        { "value": "b", "label": "B · Fotos + franja roja" },
+        { "value": "off", "label": "Sin cambios" }
+      ], "default": "auto" }
+  ],
+  "presets": [ { "name": "BEALGND Banner 2 fotos" } ]
+}
+{% endschema %}

@@ -1,0 +1,103 @@
+{%- comment -%} BEALGND · Black Friday Early Access · Productos (carrusel en móvil, fila de 4 en escritorio) {%- endcomment -%}
+<style>
+  .bea-bf-prod { background: #fff; padding: 28px 0 40px 20px; }
+  .bea-bf-prod__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-right: 20px; margin-bottom: 16px; }
+  .bea-bf-prod__title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: #121212; font-family: var(--font-body-family); }
+  .bea-bf-prod__sub { margin: 4px 0 0; font-size: 13px; line-height: 1.3; color: #6B6B6B; }
+  .bea-bf-prod__nav { display: flex; gap: 6px; }
+  .bea-bf-prod__arrow { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(18,18,18,.2); background: #fff; color: #121212;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; font-size: 14px; }
+  .bea-bf-prod__link { display: none; font-size: 15px; font-weight: 600; color: #121212; }
+  .bea-bf-prod__list { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-right: 20px; margin: 0; list-style: none; padding-left: 0; }
+  .bea-bf-prod__list::-webkit-scrollbar { display: none; }
+  .bea-bf-card { flex: 0 0 220px; scroll-snap-align: start; background: #F4F4F4; border-radius: 18px; padding: 10px 10px 14px; display: flex; flex-direction: column; gap: 12px; color: #121212; }
+  .bea-bf-card__img { position: relative; height: 230px; border-radius: 12px; overflow: hidden; background: #fff; }
+  .bea-bf-card__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bea-bf-card__tag { position: absolute; top: 10px; left: 10px; background: #218519; color: #fff; border-radius: 20px; padding: 4px 8px;
+    font-size: 9px; font-weight: 700; letter-spacing: .06em; line-height: 1.2; text-transform: uppercase; }
+  .bea-bf-card__text { display: flex; flex-direction: column; gap: 4px; padding: 0 4px; }
+  .bea-bf-card, .bea-bf-card a, .bea-bf-card a:visited { color: #121212; } .bea-bf-card__name { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  .bea-bf-card__price { font-size: 14px; font-weight: 600; line-height: 1.2; }
+  @media screen and (min-width: 990px) {
+    .bea-bf-prod { padding: 56px 120px 96px; }
+    .bea-bf-prod__inner { max-width: 1200px; margin: 0 auto; }
+    .bea-bf-prod__head { padding-right: 0; margin-bottom: 28px; }
+    .bea-bf-prod__title { font-size: 36px; }
+    .bea-bf-prod__sub { font-size: 16px; margin-top: 6px; }
+    .bea-bf-prod__nav { display: none; }
+    .bea-bf-prod__link { display: inline-block; }
+    .bea-bf-prod__list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; overflow: visible; padding-right: 0; }
+    .bea-bf-card { border-radius: 20px; padding: 12px 12px 18px; gap: 16px; }
+    .bea-bf-card__img { height: 320px; border-radius: 14px; }
+    .bea-bf-card__tag { top: 12px; left: 12px; padding: 5px 10px; font-size: 10px; }
+    .bea-bf-card__text { padding: 0 6px; }
+    .bea-bf-card__name { font-size: 16px; }
+    .bea-bf-card__price { font-size: 15px; }
+  }
+</style>
+
+<section class="bea-bf bea-bf-landing bea-bf-prod" id="bf-prod-{{ section.id }}">
+  <div class="bea-bf-prod__inner">
+    <div class="bea-bf-prod__head">
+      <div>
+        <h2 class="bea-bf-prod__title">{{ section.settings.title }}</h2>
+        {%- if section.settings.subtitle != blank -%}<p class="bea-bf-prod__sub">{{ section.settings.subtitle }}</p>{%- endif -%}
+      </div>
+      <div class="bea-bf-prod__nav">
+        <button type="button" class="bea-bf-prod__arrow" data-dir="-1" aria-label="Previous">←</button>
+        <button type="button" class="bea-bf-prod__arrow" data-dir="1" aria-label="Next">→</button>
+      </div>
+      {%- if section.settings.link_label != blank -%}
+        <a class="bea-bf-prod__link" href="{{ section.settings.link_url | default: routes.all_products_collection_url }}">{{ section.settings.link_label }} →</a>
+      {%- endif -%}
+    </div>
+    <ul class="bea-bf-prod__list" data-bf-list>
+      {%- for product in section.settings.products limit: 8 -%}
+        <li class="bea-bf-card">
+          <a href="{{ product.url }}" class="bea-bf-card__img">
+            {%- if product.featured_media -%}
+              {{ product.featured_media | image_url: width: 800 | image_tag: loading: 'lazy', widths: '300, 450, 600, 800', sizes: '(min-width: 990px) 300px, 220px', alt: product.title | escape }}
+            {%- endif -%}
+            {%- if section.settings.tag != blank -%}<span class="bea-bf-card__tag">{{ section.settings.tag }}</span>{%- endif -%}
+          </a>
+          <a href="{{ product.url }}" class="bea-bf-card__text">
+            <span class="bea-bf-card__name">{{ product.title }}</span>
+            <span class="bea-bf-card__price">{{ product.price | money_without_trailing_zeros }}</span>
+          </a>
+        </li>
+      {%- else -%}
+        <li class="bea-bf-card"><div class="bea-bf-card__img"></div><div class="bea-bf-card__text"><span class="bea-bf-card__name">Elige productos en el editor</span></div></li>
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var s = document.getElementById('bf-prod-{{ section.id }}'); if (!s) return;
+    var list = s.querySelector('[data-bf-list]');
+    s.querySelectorAll('.bea-bf-prod__arrow').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var card = list.querySelector('.bea-bf-card');
+        var step = card ? card.getBoundingClientRect().width + 10 : 230;
+        list.scrollBy({ left: step * Number(b.dataset.dir), behavior: 'smooth' });
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "BF · Productos",
+  "tag": "div",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "First pick on 11/11" },
+    { "type": "text", "id": "subtitle", "label": "Subtítulo", "default": "Bestsellers going on sale" },
+    { "type": "product_list", "id": "products", "label": "Productos", "limit": 8 },
+    { "type": "text", "id": "tag", "label": "Etiqueta verde", "default": "UP TO -70%" },
+    { "type": "text", "id": "link_label", "label": "Enlace (escritorio)", "default": "Shop bestsellers" },
+    { "type": "url", "id": "link_url", "label": "URL del enlace" }
+  ],
+  "presets": [{ "name": "BF · Productos" }]
+}
+{% endschema %}

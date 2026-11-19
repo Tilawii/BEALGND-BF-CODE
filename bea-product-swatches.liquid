@@ -1,0 +1,299 @@
+{%- comment -%}
+  bea-product-swatches.liquid  ·  BEALGND
+  Swatches de color con imagen de variante para Dawn. Autocontenido (CSS + JS dentro).
+  Se renderiza desde sections/main-product.liquid con:
+      {%- render 'bea-product-swatches', product: product -%}
+  (OJO: hay que pasar `product`, si no el mapa color->imagen sale vacío.)
+  v3: fila única con scroll horizontal + enlace "Size guide" (metafield custom.size_guide)
+      a la derecha del "Select color", abre popup centrado con overlay.
+  v3.1: i18n nativo Shopify. "Select color", "Size guide" y "Close" usan claves
+      bealgnd.swatches.* (locales/en.default.json), traducibles en Translate & Adapt >
+      "Contenido del tema predeterminado" (buscar "bealgnd"). NO tocar aqui para traducir.
+{%- endcomment -%}
+
+{%- liquid
+  assign color_synonyms = 'color,colour,colores,couleur,farbe' | split: ','
+  assign color_option = null
+  if product
+    for opt in product.options_with_values
+      assign opt_name_down = opt.name | downcase | strip
+      if color_synonyms contains opt_name_down
+        assign color_option = opt
+      endif
+    endfor
+  endif
+
+  assign size_guide_img = product.metafields.custom.size_guide.value
+  for bea_c in product.collections
+    if bea_c.handle == 'bags'
+      assign size_guide_img = blank
+    endif
+  endfor
+-%}
+
+<style>
+  .bea-sw{border:0;padding:0;margin:20px 0 0;display:flex !important;flex-direction:column !important;align-items:flex-start !important;
+    min-width:0 !important;max-width:100% !important;width:100%;}
+  .bea-sw__head{width:100%;}
+  .bea-sw__wrap{width:100%;}
+  .bea-sw > legend{display:none;}
+  .bea-sw .product-form__input,
+  .bea-sw label{display:none !important;}
+  .bea-sw__head{display:flex;align-items:baseline;margin-bottom:12px;
+    font-family:'Inter',sans-serif;font-size:10.5px;line-height:normal;
+    letter-spacing:-.05em;text-transform:none;}
+  .bea-sw__head .bea-sw__lab{font-weight:500;color:#121212;}
+  .bea-sw__head .bea-sw__n{font-weight:500;font-size:6px;color:#888;
+    letter-spacing:-.05em;margin-left:3px;position:relative;top:-2px;}
+  .bea-sw__head .bea-sw__sel{font-weight:400;color:#888;margin-left:12px;}
+  /* Enlace Size guide: empujado a la derecha del todo */
+  .bea-sw__head .bea-sw__guide{margin-left:auto;font-weight:500;color:#121212;
+    text-decoration:underline;text-underline-offset:2px;cursor:pointer;
+    background:none;border:0;padding:0;font-family:inherit;font-size:10.5px;letter-spacing:-.05em;}
+  .bea-sw__wrap{display:flex;flex-wrap:nowrap;gap:10px;
+    max-width:100%;overflow-x:auto;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+  .bea-sw__wrap::-webkit-scrollbar{display:none;}
+  .bea-sw__item{box-sizing:border-box;width:70px;height:70px;padding:0;margin:0;flex:0 0 auto;
+    border:1px solid transparent;border-radius:6px;background:#fafafa;overflow:hidden;
+    cursor:pointer;position:relative;transition:border-color .15s ease;}
+  .bea-sw__item img{width:100%;height:100%;object-fit:contain;display:block;
+    mix-blend-mode:multiply;transform:scale(1.35);transform-origin:center;}
+  .bea-sw__item.is-active{border-color:#121212;}
+  .bea-sw__item--noimg{display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:4px;font-family:'Inter',sans-serif;font-weight:400;
+    font-size:11px;letter-spacing:-.03em;color:#121212;text-transform:capitalize;}
+
+  /* ===== Popup Size guide ===== */
+  .bea-sg-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;
+    background:rgba(18,18,18,.55);padding:20px;font-family:'Inter',sans-serif;}
+  .bea-sg-modal.is-open{display:flex;}
+  .bea-sg-modal__box{position:relative;background:#fff;border-radius:10px;max-width:560px;width:100%;
+    max-height:88vh;overflow:auto;padding:18px;box-sizing:border-box;}
+  .bea-sg-modal__title{font-size:13px;font-weight:600;color:#121212;letter-spacing:-.02em;margin:0 0 12px;text-transform:uppercase;}
+  .bea-sg-modal__img{width:100%;height:auto;display:block;border-radius:6px;}
+  .bea-sg-modal__close{position:absolute;top:12px;right:12px;width:28px;height:28px;border:0;background:none;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:#121212;line-height:0;}
+  .bea-sg-modal__close svg{width:16px;height:16px;}
+</style>
+
+<script>
+  /* --- DATOS (Liquid) --- */
+  window.BEA_SWATCH_TEST = 'snippet ejecutado';
+  window.BEA_COLOR_OPT_NAME = {{ color_option.name | default: '' | json }};
+  {%- if size_guide_img != blank -%}
+    window.BEA_SIZE_GUIDE = {{ size_guide_img | image_url: width: 1000 | json }};
+  {%- else -%}
+    window.BEA_SIZE_GUIDE = '';
+  {%- endif -%}
+  /* Textos i18n (bealgnd.swatches.*) resueltos por el filtro | t */
+  window.BEA_SW_I18N = {
+    selectColor: {{ 'bealgnd.swatches.select_color' | t | json }},
+    sizeGuide: {{ 'bealgnd.swatches.size_guide' | t | json }},
+    close: {{ 'bealgnd.swatches.close' | t | json }}
+  };
+  window.BEA_COLORS = [
+  {%- assign printed = 0 -%}
+  {%- if color_option -%}
+    {%- assign opt_index = color_option.position | minus: 1 -%}
+    {%- assign seen = '|' -%}
+    {%- for variant in product.variants -%}
+      {%- assign cval = variant.options[opt_index] -%}
+      {%- assign key = '|' | append: cval | append: '|' -%}
+      {%- unless seen contains key -%}
+        {%- assign seen = seen | append: cval | append: '|' -%}
+        {%- if printed > 0 -%},{%- endif -%}
+        {%- assign vimg = variant.image | default: variant.featured_image -%}
+        {%- if vimg -%}
+          {%- assign vimg_url = vimg | image_url: width: 300 -%}
+        {%- else -%}
+          {%- assign vimg_url = '' -%}
+        {%- endif -%}
+        {"name": {{ cval | json }}, "img": {{ vimg_url | json }}}
+        {%- assign printed = printed | plus: 1 -%}
+      {%- endunless -%}
+    {%- endfor -%}
+  {%- endif -%}
+  ];
+</script>
+
+{%- comment -%} Popup (solo si hay imagen de guia) {%- endcomment -%}
+{%- if size_guide_img != blank -%}
+  <div class="bea-sg-modal" id="bea-sg-modal" role="dialog" aria-modal="true" aria-label="{{ 'bealgnd.swatches.size_guide' | t }}">
+    <div class="bea-sg-modal__box">
+      <button type="button" class="bea-sg-modal__close" aria-label="{{ 'bealgnd.swatches.close' | t }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <h2 class="bea-sg-modal__title">{{ 'bealgnd.swatches.size_guide' | t }}</h2>
+      <img class="bea-sg-modal__img" src="{{ size_guide_img | image_url: width: 1000 }}" alt="{{ 'bealgnd.swatches.size_guide' | t }}" loading="lazy">
+    </div>
+  </div>
+{%- endif -%}
+
+<script>
+  /* --- COMPONENTE (JS) --- */
+  (function () {
+    function findColorFieldset(scope) {
+      var vs = scope.querySelector('variant-selects');
+      if (!vs) return null;
+      var syn = /^(color|colour|colores|couleur|farbe)\b/i;
+      var name = (window.BEA_COLOR_OPT_NAME || '').trim().toLowerCase();
+      var sets = vs.querySelectorAll('fieldset.product-form__input');
+      for (var i = 0; i < sets.length; i++) {
+        var lg = sets[i].querySelector('legend');
+        var t = lg ? lg.textContent.trim().toLowerCase() : '';
+        if ((name && t.indexOf(name) === 0) || syn.test(t)) return sets[i];
+      }
+      return null;
+    }
+
+    /* Popup Size guide */
+    function bindSizeGuide(triggerBtn) {
+      var modal = document.getElementById('bea-sg-modal');
+      if (!modal || !triggerBtn) return;
+      function open(){ modal.classList.add('is-open'); document.body.style.overflow='hidden'; }
+      function close(){ modal.classList.remove('is-open'); document.body.style.overflow=''; }
+      triggerBtn.addEventListener('click', function(e){ e.preventDefault(); open(); });
+      modal.addEventListener('click', function(e){
+        if (e.target === modal || e.target.closest('.bea-sg-modal__close')) close();
+      });
+      document.addEventListener('keyup', function(e){ if(e.code==='Escape') close(); });
+    }
+
+    function build(fs) {
+      if (!fs || fs.dataset.beaSwatched === '1') return;
+      var inputs = fs.querySelectorAll('input[type="radio"]');
+      if (!inputs.length) return;
+      fs.dataset.beaSwatched = '1';
+      fs.classList.add('bea-sw');
+
+      var map = {};
+      (window.BEA_COLORS || []).forEach(function (c) { map[c.name] = c.img; });
+
+      var head = document.createElement('div');
+      head.className = 'bea-sw__head';
+      var wrap = document.createElement('div');
+      wrap.className = 'bea-sw__wrap';
+
+      function setHead(sel) {
+        var guide = (window.BEA_SIZE_GUIDE && window.BEA_SIZE_GUIDE.length)
+          ? '<button type="button" class="bea-sw__guide">' + window.BEA_SW_I18N.sizeGuide + '</button>' : '';
+        head.innerHTML =
+          '<span class="bea-sw__lab">' + window.BEA_SW_I18N.selectColor + '</span>' +
+          '<span class="bea-sw__n"></span>' +
+          '<span class="bea-sw__sel"></span>' +
+          guide;
+        head.querySelector('.bea-sw__n').textContent = inputs.length;
+        head.querySelector('.bea-sw__sel').textContent = sel || '';
+        var g = head.querySelector('.bea-sw__guide');
+        if (g) bindSizeGuide(g);
+      }
+
+      inputs.forEach(function (inp) {
+        var val = inp.value;
+        var img = map[val] || '';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bea-sw__item';
+        btn.setAttribute('aria-label', val);
+        if (img) {
+          var im = document.createElement('img');
+          im.src = img; im.alt = val; im.loading = 'eager'; im.width = 68; im.height = 68;
+          btn.appendChild(im);
+        } else {
+          btn.classList.add('bea-sw__item--noimg');
+          btn.textContent = val;
+        }
+        if (inp.checked) btn.classList.add('is-active');
+        btn.addEventListener('click', function () {
+          if (!inp.checked) {
+            inp.click();
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          wrap.querySelectorAll('.bea-sw__item').forEach(function (x) {
+            x.classList.remove('is-active');
+          });
+          btn.classList.add('is-active');
+          setHead(val);
+        });
+        wrap.appendChild(btn);
+      });
+
+      var checked = fs.querySelector('input[type="radio"]:checked');
+      setHead(checked ? checked.value : (inputs[0] && inputs[0].value));
+      fs.appendChild(head);
+      fs.appendChild(wrap);
+    }
+
+    var raf;
+    function run() {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        var fs = findColorFieldset(document);
+        build(fs);
+        // Si NO hay selector de color pero SÍ hay guia -> inyecta el enlace por su cuenta
+        if (!fs && window.BEA_SIZE_GUIDE && window.BEA_SIZE_GUIDE.length) {
+          injectStandaloneGuide();
+        }
+      });
+    }
+
+    function injectStandaloneGuide() {
+      if (document.getElementById('bea-sg-standalone')) return;
+
+      // 1) Preferente: meterlo en la MISMA fila que las reviews (a la derecha)
+      var reviews = document.querySelector('.bea-reviews, .bea-product-reviews, [class*="bea-review"]') ||
+                    document.querySelector('.rating-wrapper');
+      if (reviews) {
+        var cs = window.getComputedStyle(reviews);
+        // convertir la fila de reviews en flex y empujar la guia a la derecha
+        if (cs.display.indexOf('flex') === -1) reviews.style.display = 'flex';
+        reviews.style.alignItems = 'center';
+        reviews.style.justifyContent = 'space-between';
+        reviews.style.gap = '12px';
+        var g1 = makeGuideBtn();
+        g1.id = 'bea-sg-standalone';
+        g1.style.marginLeft = 'auto';
+        reviews.appendChild(g1);
+        bindSizeGuide(g1);
+        return;
+      }
+
+      // 2) Fallback: linea propia encima del bloque de compra
+      var anchor = document.querySelector('.product__info-container .product-form') ||
+                   document.querySelector('.product-form__buttons') ||
+                   document.querySelector('.product__info-container');
+      if (!anchor) return;
+      var row = document.createElement('div');
+      row.id = 'bea-sg-standalone';
+      row.style.cssText = 'display:flex;justify-content:flex-end;margin:0 0 12px;font-family:\'Inter\',sans-serif;';
+      var g2 = makeGuideBtn();
+      row.appendChild(g2);
+      anchor.parentNode.insertBefore(row, anchor);
+      bindSizeGuide(g2);
+    }
+
+    function makeGuideBtn() {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bea-sw__guide';
+      btn.style.cssText = 'margin-left:0;background:none;border:0;padding:0;cursor:pointer;'
+        + "font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:-.05em;font-weight:500;"
+        + 'color:#121212;text-decoration:underline;text-underline-offset:2px;white-space:nowrap;';
+      btn.textContent = window.BEA_SW_I18N.sizeGuide;
+      return btn;
+    }
+
+    (window.BEA_EARLY = window.BEA_EARLY || []).push(function () { var fs = findColorFieldset(document); build(fs); if (!fs && window.BEA_SIZE_GUIDE && window.BEA_SIZE_GUIDE.length) injectStandaloneGuide(); }); /* BEA · montaje antes del primer pintado */
+if (document.readyState !== 'loading') run();
+    else document.addEventListener('DOMContentLoaded', run);
+
+    /* Dawn re-renderiza el bloque al cambiar de variante: re-inyecta si hace falta. */
+    var host = document.querySelector('product-info') || document.body;
+    new MutationObserver(function () { build(findColorFieldset(document)); }).observe(host, { childList: true, subtree: true }); /* BEA · sin fotograma con los botones de Dawn al cambiar de color */
+
+    /* Editor de temas */
+    document.addEventListener('shopify:section:load', run);
+  })();
+</script>

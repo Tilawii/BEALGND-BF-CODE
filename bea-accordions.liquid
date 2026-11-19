@@ -1,0 +1,224 @@
+{%- comment -%}
+  bea-accordions.liquid  ·  BEALGND  (v4.3: v4.2 + i18n nativo Shopify para textos fijos.)
+  Acordeones de la ficha (Description / Materials & Warranty / Deliveries & Returns / Reviews)
+  + linea "Chat with an advisor on ...".
+      {%- when 'bea_accordions' -%}
+        {%- render 'bea-accordions', block: block, product: product -%}
+
+  Reviews: se leen de los metafields del PRODUCTO (namespace "reviews"):
+    reviews.r1_text / r1_name / r1_stars (rating) / r1_image (file) / r1_verified (bool)
+    ... hasta r6. Cada review aparece si tiene texto. Acordeon Reviews sale ABIERTO.
+  La Description usa la descripcion del producto si dejas su contenido vacio.
+
+  i18n: textos fijos (advisor_label, Verified, alt "Review") usan claves bealgnd.accordions.*
+  (locales/en.default.json), traducibles en Translate & Adapt > "Contenido del tema predeterminado".
+  Los TITULOS de acordeon (Description, Materials & Warranty...) son ajustes del bloque y se
+  traducen como contenido de seccion en T&A, NO aqui.
+{%- endcomment -%}
+
+{%- liquid
+  assign s = block.settings
+
+  assign advisor_default = 'bealgnd.accordions.advisor_label' | t
+  assign review_alt_default = 'bealgnd.accordions.review_alt' | t
+
+  assign desc = s.desc_content
+  if desc == blank
+    assign desc = product.description
+  endif
+
+  assign mf = product.metafields.reviews
+
+  # Hay reviews si al menos una tiene texto
+  assign has_reviews = false
+  if mf.r1_text != blank
+    assign has_reviews = true
+  endif
+  if mf.r2_text != blank
+    assign has_reviews = true
+  endif
+  if mf.r3_text != blank
+    assign has_reviews = true
+  endif
+  if mf.r4_text != blank
+    assign has_reviews = true
+  endif
+  if mf.r5_text != blank
+    assign has_reviews = true
+  endif
+  if mf.r6_text != blank
+    assign has_reviews = true
+  endif
+-%}
+
+<div id="bea-acc-{{ block.id }}" class="bea-acc" style="margin:14px 0 24px;font-family:'Inter',sans-serif;letter-spacing:-.03em;" {{ block.shopify_attributes }}>
+  <style>
+    #bea-acc-{{ block.id }} details{border:0;padding:0;}
+    #bea-acc-{{ block.id }} summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:9px 0;}
+    #bea-acc-{{ block.id }} summary::-webkit-details-marker{display:none;}
+    #bea-acc-{{ block.id }} .bea-acc__t{font-size:13px;font-weight:500;color:#121212;line-height:1;}
+    #bea-acc-{{ block.id }} .bea-acc__ic{position:relative;width:11px;height:11px;flex:0 0 11px;}
+    #bea-acc-{{ block.id }} .bea-acc__ic .h{position:absolute;top:50%;left:0;right:0;height:1px;background:#121212;transform:translateY(-50%);}
+    #bea-acc-{{ block.id }} .bea-acc__ic .v{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#121212;transform:translateX(-50%);transition:opacity .2s ease;}
+    #bea-acc-{{ block.id }} details[open] .bea-acc__ic .v{opacity:0;}
+    #bea-acc-{{ block.id }} .bea-acc__c{overflow:hidden;}
+    #bea-acc-{{ block.id }} .bea-acc__c-in{font-size:12px;font-weight:400;line-height:1.5;color:rgba(18,18,18,.75);padding:0 0 10px;}
+    #bea-acc-{{ block.id }} .bea-acc__c-in p{margin:0 0 8px;}
+    #bea-acc-{{ block.id }} .bea-acc__c-in p:last-child{margin-bottom:0;}
+    #bea-acc-{{ block.id }} .bea-acc__advisor{font-size:11px;color:#121212;margin-top:12px;letter-spacing:-.02em;}
+    #bea-acc-{{ block.id }} .bea-acc__advisor a{color:#121212;font-weight:500;text-decoration:none;}
+
+    /* ===== Carrusel de reviews ===== */
+    #bea-acc-{{ block.id }} .bea-rev__intro{font-size:12px;line-height:1.5;color:rgba(18,18,18,.75);margin:0 0 12px;}
+    #bea-acc-{{ block.id }} .bea-rev{display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 0 4px;}
+    #bea-acc-{{ block.id }} .bea-rev::-webkit-scrollbar{display:none;}
+    #bea-acc-{{ block.id }} .bea-rev__card{flex:0 0 235px;width:235px;scroll-snap-align:start;border:1px solid rgba(18,18,18,.10);border-radius:8px;padding:12px;box-sizing:border-box;background:#fff;}
+    #bea-acc-{{ block.id }} .bea-rev__img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;margin:0 0 10px;background:#fafafa;}
+    #bea-acc-{{ block.id }} .bea-rev__stars{display:flex;gap:2px;margin:0 0 7px;}
+    #bea-acc-{{ block.id }} .bea-rev__stars svg{width:12px;height:12px;display:block;}
+    #bea-acc-{{ block.id }} .bea-rev__text{font-size:12px;line-height:1.45;color:#121212;margin:0 0 9px;}
+    #bea-acc-{{ block.id }} .bea-rev__meta{display:flex;align-items:center;gap:6px;}
+    #bea-acc-{{ block.id }} .bea-rev__name{font-size:11px;font-weight:500;color:#121212;letter-spacing:-.02em;}
+    #bea-acc-{{ block.id }} .bea-rev__verified{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:rgba(18,18,18,.5);}
+    #bea-acc-{{ block.id }} .bea-rev__verified svg{width:10px;height:10px;}
+  </style>
+
+  {%- if desc != blank -%}
+    <details>
+      <summary><span class="bea-acc__t">{{ s.desc_title | default: 'Description' }}</span><span class="bea-acc__ic"><span class="h"></span><span class="v"></span></span></summary>
+      <div class="bea-acc__c"><div class="bea-acc__c-in">{{ desc }}</div></div>
+    </details>
+  {%- endif -%}
+
+  {%- if s.mat_content != blank -%}
+    <details>
+      <summary><span class="bea-acc__t">{{ s.mat_title | default: 'Materials & Warranty' }}</span><span class="bea-acc__ic"><span class="h"></span><span class="v"></span></span></summary>
+      <div class="bea-acc__c"><div class="bea-acc__c-in">{{ s.mat_content }}</div></div>
+    </details>
+  {%- endif -%}
+
+  {%- if s.del_content != blank -%}
+    <details>
+      <summary><span class="bea-acc__t">{{ s.del_title | default: 'Deliveries & Returns' }}</span><span class="bea-acc__ic"><span class="h"></span><span class="v"></span></span></summary>
+      <div class="bea-acc__c"><div class="bea-acc__c-in">{{ s.del_content }}</div></div>
+    </details>
+  {%- endif -%}
+
+  {%- if has_reviews -%}
+    <details open data-bea-reviews-acc>
+      <summary><span class="bea-acc__t">{{ s.rev_title | default: 'Reviews' }}</span><span class="bea-acc__ic"><span class="h"></span><span class="v"></span></span></summary>
+      <div class="bea-acc__c"><div class="bea-acc__c-in">
+        {%- if s.rev_content != blank -%}
+          <div class="bea-rev__intro">{{ s.rev_content }}</div>
+        {%- endif -%}
+        <div class="bea-rev">
+          {%- for i in (1..6) -%}
+            {%- assign k_text = 'r' | append: i | append: '_text' -%}
+            {%- assign txt = mf[k_text] -%}
+            {%- if txt != blank -%}
+              {%- assign k_img = 'r' | append: i | append: '_image' -%}
+              {%- assign k_name = 'r' | append: i | append: '_name' -%}
+              {%- assign k_stars = 'r' | append: i | append: '_stars' -%}
+              {%- assign k_ver = 'r' | append: i | append: '_verified' -%}
+              {%- assign rimg = mf[k_img] -%}
+              {%- assign rname = mf[k_name] -%}
+              {%- assign rstars = mf[k_stars].value | default: 5 | round -%}
+              {%- if rstars < 1 -%}{%- assign rstars = 5 -%}{%- endif -%}
+              <div class="bea-rev__card">
+                {%- if rimg != blank -%}
+                  <img class="bea-rev__img" src="{{ rimg | image_url: width: 470 }}" alt="{{ rname | default: review_alt_default | escape }}" loading="lazy" width="235" height="235">
+                {%- endif -%}
+                <div class="bea-rev__stars" aria-label="{{ rstars }} / 5">
+                  {%- for star in (1..5) -%}
+                    {%- if star <= rstars -%}
+                      <svg viewBox="0 0 24 24" fill="#121212" aria-hidden="true"><path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.9 5.9 21.1 7.2 14.4 2.2 9.7l6.8-.8z"/></svg>
+                    {%- else -%}
+                      <svg viewBox="0 0 24 24" fill="rgba(18,18,18,.18)" aria-hidden="true"><path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.9 5.9 21.1 7.2 14.4 2.2 9.7l6.8-.8z"/></svg>
+                    {%- endif -%}
+                  {%- endfor -%}
+                </div>
+                <p class="bea-rev__text">{{ txt }}</p>
+                {%- if rname != blank or mf[k_ver] -%}
+                  <div class="bea-rev__meta">
+                    {%- if rname != blank -%}<span class="bea-rev__name">{{ rname }}</span>{%- endif -%}
+                    {%- if mf[k_ver] -%}
+                      <span class="bea-rev__verified"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(18,18,18,.5)" stroke-width="2.4" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>{{ 'bealgnd.accordions.verified' | t }}</span>
+                    {%- endif -%}
+                  </div>
+                {%- endif -%}
+              </div>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div></div>
+    </details>
+  {%- endif -%}
+
+  {%- if s.phone != blank -%}
+    {%- assign wa = s.phone | remove: ' ' | remove: '+' | remove: '-' -%}
+    <div class="bea-acc__advisor">{{ s.advisor_label | default: advisor_default }} <a href="https://wa.me/{{ wa }}" target="_blank" rel="noopener">{{ s.phone }}</a></div>
+  {%- endif -%}
+
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('bea-acc-{{ block.id }}');
+  if (!root) return;
+  var DUR = 250;
+
+  // ===== "694 reviews" (arriba, .bea-reviews) -> abre y baja hasta el acordeon de Reviews =====
+  var revAcc = root.querySelector('details[data-bea-reviews-acc]');
+  if (revAcc) {
+    document.querySelectorAll('.bea-reviews').forEach(function (el) {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (!revAcc.open) revAcc.open = true;
+        var header = document.querySelector('.section-header, .shopify-section-header-sticky');
+        var offset = (header ? header.getBoundingClientRect().height : 0) + 16;
+        var top = revAcc.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+      });
+    });
+  }
+
+  root.querySelectorAll('details').forEach(function (d) {
+    var summary = d.querySelector('summary');
+    var content = d.querySelector('.bea-acc__c');
+    if (!summary || !content) return;
+
+    function clear() {
+      content.style.transition = '';
+      content.style.height = '';
+      content.style.opacity = '';
+      delete d.dataset.animating;
+    }
+
+    summary.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (d.dataset.animating) return;
+      d.dataset.animating = '1';
+
+      if (d.open) {
+        content.style.height = content.scrollHeight + 'px';
+        content.style.opacity = '1';
+        content.getBoundingClientRect();
+        content.style.transition = 'height ' + DUR + 'ms ease, opacity ' + DUR + 'ms ease';
+        content.style.height = '0px';
+        content.style.opacity = '0';
+        window.setTimeout(function () { d.open = false; clear(); }, DUR);
+      } else {
+        d.open = true;
+        content.style.height = '0px';
+        content.style.opacity = '0';
+        content.getBoundingClientRect();
+        content.style.transition = 'height ' + DUR + 'ms ease, opacity ' + DUR + 'ms ease';
+        content.style.height = content.scrollHeight + 'px';
+        content.style.opacity = '1';
+        window.setTimeout(clear, DUR);
+      }
+    });
+  });
+})();
+</script>

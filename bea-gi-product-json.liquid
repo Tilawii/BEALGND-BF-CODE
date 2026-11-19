@@ -1,0 +1,63 @@
+{%- comment -%}
+  bea-gi-product-json.liquid · BEALGND · "Regalo incluido"
+  Devuelve un objeto JSON con lo que necesitan la ficha y el carrito para pintar un producto
+  (regalo o producto al 50 %): variantes disponibles con su color, foto y precio, y los colores con su muestra.
+  Uso: {%- render 'bea-gi-product-json', p: producto -%}
+{%- endcomment -%}
+{%- liquid
+  assign cidx = 0
+  for opt in p.options_with_values
+    assign oname = opt.name | downcase
+    if oname contains 'color' or oname contains 'colour' or oname contains 'colores' or oname contains 'couleur'
+      assign cidx = forloop.index
+      break
+    endif
+  endfor
+  assign cidx0 = cidx | minus: 1
+  assign words = p.title | split: ' '
+  assign short = p.title
+  if words.size > 1
+    assign short = p.title | remove_first: words.first | strip
+  endif
+  assign firstv = true
+  assign firstc = true
+-%}
+{"pid":{{ p.id }},"handle":{{ p.handle | json }},"title":{{ p.title | json }},"short":{{ short | json }},"variants":[
+{%- for v in p.variants -%}
+  {%- if v.available -%}
+    {%- liquid
+      assign vc = ''
+      if cidx > 0
+        assign vc = v.options[cidx0]
+      endif
+      assign vi = ''
+      if v.image
+        assign vi = v.image | image_url: width: 200
+      elsif p.featured_image
+        assign vi = p.featured_image | image_url: width: 200
+      endif
+    -%}
+    {%- unless firstv -%},{%- endunless -%}{%- assign firstv = false -%}
+    {"id":{{ v.id }},"color":{{ vc | json }},"img":{{ vi | json }},"price":{{ v.price }}}
+  {%- endif -%}
+{%- endfor -%}
+],"colors":[
+{%- if cidx > 0 -%}
+  {%- for val in p.options_with_values[cidx0].values -%}
+    {%- liquid
+      assign sw = ''
+      if val.swatch.color
+        assign sw = val.swatch.color | append: ''
+      endif
+      assign si = ''
+      if val.swatch.image
+        assign si = val.swatch.image | image_url: width: 60
+      elsif val.variant.image
+        assign si = val.variant.image | image_url: width: 60
+      endif
+    -%}
+    {%- unless firstc -%},{%- endunless -%}{%- assign firstc = false -%}
+    {"name":{{ val.name | json }},"sw":{{ sw | json }},"img":{{ si | json }}}
+  {%- endfor -%}
+{%- endif -%}
+]}

@@ -1,0 +1,17 @@
+<li class="bea-menu__item" {{ block.shopify_attributes }}>
+  <a class="bea-menu__link bea-menu__link--big" href="{% render 'bea-menu-href', url: block.settings.link %}">{{ block.settings.title }}{%- if block.settings.badge != blank -%}<span class="bea-menu__badge" style="color:{{ block.settings.badge_color }}">{{ block.settings.badge }}</span>{%- endif -%}</a>
+</li>
+
+{% schema %}
+{
+  "name": "Enlace grande",
+  "tag": null,
+  "settings": [
+    { "type": "text", "id": "title", "label": "Texto", "default": "Enlace" },
+    { "type": "url", "id": "link", "label": "Enlace" },
+    { "type": "text", "id": "badge", "label": "Etiqueta (opcional)", "info": "Texto pequeño de color al lado del enlace. Déjalo vacío para no mostrarla." },
+    { "type": "color", "id": "badge_color", "label": "Color de la etiqueta", "default": "#ce0b0b" }
+  ],
+  "presets": [{ "name": "Enlace grande" }]
+}
+{% endschema %}

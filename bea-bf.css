@@ -1,0 +1,80 @@
+/* BEALGND · Black Friday (nov 2026) · solo se carga con el modo Black Friday activado */
+[data-bea-bf][hidden], [data-bea-bf-off][hidden], [data-bea-bf-cd][hidden], [data-bea-bf-cd-wrap][hidden] { display: none !important; }
+
+/* Barra de arriba */
+.bea-bf-bar { background: var(--bea-bf); color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; line-height: 13px; letter-spacing: 0; text-align: center; padding: 8px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bea-bf-bar a { color: inherit; text-decoration: none; }
+.bea-bf-bar__sep { padding: 0 .55em; }
+@media screen and (max-width: 749px) {
+  .bea-bf-bar { font-size: 10px; line-height: 12px; padding: 8.5px 10px; }
+  .bea-bf-bar__sep { padding: 0 .3em; }
+}
+
+/* Precios: rebajado en rojo, el de antes tachado en gris (estilo del tema) */
+body.bea-bf .price--on-sale .price-item--sale,
+body.bea-bf .price--on-sale .price-item--last { color: var(--bea-bf); }
+body.bea-bf .price--on-sale .price-item--regular { color: #8c8c8c; }
+body.bea-bf .price__badge-sale { display: none !important; }
+
+/* Ficha */
+body.bea-bf .bea-fa-pill { background: #fbe9e9; color: var(--bea-bf); }
+body.bea-bf .bea-gi__pr b { color: var(--bea-bf); }
+body.bea-bf.bea-tpl-product .product-form__submit:not([disabled]) { background-color: var(--bea-bf) !important; border-color: var(--bea-bf) !important; color: #fff !important; }
+body.bea-bf.bea-tpl-product .product-form__submit:not([disabled])::after,
+body.bea-bf.bea-tpl-product .product-form__submit:not([disabled])::before { box-shadow: none !important; }
+.bea-gi__bf { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 27px; box-sizing: border-box; padding: 6px 12px; border-radius: 6px; background: var(--bea-bf); color: #fff; font-family: 'Inter', sans-serif; font-size: 11px; line-height: 13px; white-space: nowrap; }
+.bea-gi__bf b { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; }
+.bea-gi__bf span { font-weight: 500; opacity: .85; }
+
+/* Banner de colección · B: franja roja debajo de las fotos */
+.bea-bf-strip { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; min-height: 48px; box-sizing: border-box; padding: 0 20px; border-radius: 8px; background: var(--bea-bf); color: #fff; font-family: 'Inter', sans-serif; text-decoration: none; }
+.bea-bf-strip__l { font-size: 15px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bea-bf-strip__r { font-size: 14px; font-weight: 500; white-space: nowrap; }
+.bea-bf-strip__lbl { margin-right: .3em; }
+@media screen and (max-width: 749px) {
+  .bea-bf-strip { min-height: 34px; padding: 0 12px; margin-top: 4px; }
+  .bea-bf-strip__l { font-size: 10px; }
+  .bea-bf-strip__r { font-size: 10px; }
+  .bea-bf-strip__lbl, .bea-bf-strip__arrow { display: none; }
+}
+
+/* Banner de colección · A: bloque rojo */
+.bea-bf-a { display: flex; align-items: center; justify-content: space-between; gap: 40px; box-sizing: border-box; min-height: 380px; padding: 56px; border-radius: 12px; background: var(--bea-bf); color: #fff; font-family: 'Inter', sans-serif; }
+.bea-bf-a__l { min-width: 0; }
+.bea-bf-a__t { margin: 0; text-transform: uppercase; font-size: clamp(56px, 6.4vw, 110px); white-space: nowrap; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; color: #fff; }
+.bea-bf-a__s { margin: 10px 0 0; font-size: 24px; font-weight: 400; line-height: 1.2; }
+.bea-bf-a__s-m { display: none; }
+.bea-bf-a__link { display: inline-block; margin-top: 36px; color: #fff; font-size: 16px; font-weight: 500; text-decoration: none; }
+.bea-bf-a__link:hover { text-decoration: underline; }
+.bea-bf-a__r { flex: 0 0 auto; }
+.bea-bf-a__lbl { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.bea-bf-blocks { display: flex; gap: 48px; }
+.bea-bf-blocks__i { display: flex; flex-direction: column; gap: 4px; min-width: 72px; }
+.bea-bf-blocks__i b { font-size: 56px; font-weight: 500; line-height: 1.2; letter-spacing: 0; }
+.bea-bf-blocks__i small { font-size: 12px; font-weight: 500; letter-spacing: .08em; }
+@media screen and (max-width: 989px) { .bea-bf-blocks__i b { font-size: 40px; } .bea-bf-blocks { gap: 28px; } }
+@media screen and (max-width: 749px) {
+  .bea-bf-a { min-height: 152px; padding: 22px 16px 18px; }
+  .bea-bf-a__t { font-size: 36px; }
+  .bea-bf-a__s { margin-top: 4px; font-size: 12px; }
+  .bea-bf-a__s-d { display: none; }
+  .bea-bf-a__s-m { display: inline; }
+  .bea-bf-a__link { margin-top: 16px; font-size: 12px; }
+  .bea-bf-a__r { display: none; }
+}
+
+/* Build Your Set: pastilla + cuenta atrás en la cabecera */
+.bea-set__bf { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #121212; }
+.bea-bf-pill { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 4px; background: var(--bea-bf); color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+.bea-bf-a-wrap { padding: 0 1.5rem; box-sizing: border-box; }
+@media screen and (max-width: 749px) { .bea-bf-a-wrap { padding: 0 12px; } }
+
+/* Cuenta atrás escondida hasta los últimos días (ajuste «Mostrar la cuenta atrás solo los últimos días») */
+body.bea-bf-nocd [data-bea-bf-cd-wrap] { display: none !important; }
+
+/* Tarjetas: precio BF en rojo primero y el de antes tachado en gris a la derecha (gana a bealgnd.css) */
+body.bea-bf .product-card-wrapper .price--on-sale .price-item--sale,
+body.bea-bf .product-card-wrapper .price--on-sale .price-item--last { color: var(--bea-bf) !important; }
+body.bea-bf .product-card-wrapper .price--on-sale .price-item--regular { color: #8c8c8c !important; }
+body.bea-bf .product-card-wrapper .price--on-sale .price__sale { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; align-items: baseline; gap: 6px; }

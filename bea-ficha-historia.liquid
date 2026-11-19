@@ -1,0 +1,72 @@
+{%- comment -%}
+bea-ficha-historia.liquid · BEALGND · Ficha nueva (nov 2026)
+Sección negra con la historia del producto: título + hasta 4 bloques (foto, titular, texto).
+Contenido: formulario «Ficha de producto» (Contenido → Metaobjetos). Si no hay nada, la sección no sale.
+{%- endcomment -%}
+{%- liquid
+  assign f = product.metafields.custom.ficha.value
+  if f == blank
+    assign f = metaobjects.bea_ficha_producto[product.handle]
+  endif
+  assign n = 0
+  if f != blank
+    for i in (1..4)
+      assign kf = 'historia_' | append: i | append: '_foto'
+      assign kt = 'historia_' | append: i | append: '_titular'
+      if f[kf] != blank or f[kt] != blank
+        assign n = n | plus: 1
+      endif
+    endfor
+  endif
+-%}
+{%- if n > 0 -%}
+<div id="bea-fh-{{ section.id }}" class="bea-fh">
+  <style>
+    #bea-fh-{{ section.id }}{background:#121212;color:#fff;font-family:'Inter',sans-serif;padding:30px 15px 34px;}
+    #bea-fh-{{ section.id }} .bea-fh__in{max-width:1200px;margin:0 auto;}
+    #bea-fh-{{ section.id }} .bea-fh__t{font-size:16px;font-weight:500;letter-spacing:-.02em;text-transform:uppercase;text-align:center;margin:0 0 14px;}
+    #bea-fh-{{ section.id }} .bea-fh__grid{display:grid;grid-template-columns:1fr;gap:24px;}
+    #bea-fh-{{ section.id }} .bea-fh__img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#262626;}
+    #bea-fh-{{ section.id }} .bea-fh__t,#bea-fh-{{ section.id }} .bea-fh__h{color:#fff;font-family:'Inter',sans-serif;}
+    #bea-fh-{{ section.id }} .bea-fh__h{font-size:16px;font-weight:500;letter-spacing:-.03em;text-align:center;margin:12px 0 8px;}
+    #bea-fh-{{ section.id }} .bea-fh__p{font-size:12px;line-height:1.45;color:#bdbdbd;text-align:center;margin:0 auto;max-width:330px;letter-spacing:-.02em;}
+    @media (min-width:990px){
+      #bea-fh-{{ section.id }}{padding:56px 40px 64px;}
+      #bea-fh-{{ section.id }} .bea-fh__t{font-size:20px;margin-bottom:28px;}
+      #bea-fh-{{ section.id }} .bea-fh__grid{grid-template-columns:repeat({{ n | at_most: 4 }},1fr);gap:20px;}
+    }
+  </style>
+  <div class="bea-fh__in">
+    {%- if f.historia_titulo != blank -%}<h2 class="bea-fh__t">{{ f.historia_titulo }}</h2>{%- endif -%}
+    <div class="bea-fh__grid">
+      {%- for i in (1..4) -%}
+        {%- assign kf = 'historia_' | append: i | append: '_foto' -%}
+        {%- assign kt = 'historia_' | append: i | append: '_titular' -%}
+        {%- assign kx = 'historia_' | append: i | append: '_texto' -%}
+        {%- if f[kf] != blank or f[kt] != blank -%}
+          <div class="bea-fh__item">
+            {%- if f[kf] != blank -%}
+              {{ f[kf] | image_url: width: 1200 | image_tag: class: 'bea-fh__img', loading: 'lazy', sizes: '(min-width: 990px) 25vw, 100vw', widths: '400, 600, 800, 1000, 1200', alt: f[kt].value }}
+            {%- endif -%}
+            {%- if f[kt] != blank -%}<h3 class="bea-fh__h">{{ f[kt] }}</h3>{%- endif -%}
+            {%- if f[kx] != blank -%}<p class="bea-fh__p">{{ f[kx] | newline_to_br }}</p>{%- endif -%}
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "BEA · Historia (ficha)",
+  "tag": "section",
+  "class": "section bea-ficha-historia",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "paragraph", "content": "El contenido sale del formulario «Ficha de producto» de cada producto (Contenido → Metaobjetos)." }
+  ],
+  "presets": [{ "name": "BEA · Historia (ficha)" }]
+}
+{% endschema %}

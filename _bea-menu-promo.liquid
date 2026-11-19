@@ -1,0 +1,15 @@
+<div class="bea-menu__promo" {{ block.shopify_attributes }}>
+  <p class="">{{ block.settings.title }}</p>
+  <p class="bea-menu__promo-sub">{{ block.settings.subtitle }}</p>
+</div>
+
+{% schema %}
+{
+  "name": "Texto de arriba",
+  "tag": null,
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "Free worldwide shipping" },
+    { "type": "text", "id": "subtitle", "label": "Subtítulo", "default": "On every order — made for legends" }
+  ]
+}
+{% endschema %}

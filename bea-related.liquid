@@ -1,0 +1,139 @@
+{%- comment -%}
+  bea-related.liquid  ·  BEALGND  (v6.1 · CRO: una sola fila, sin pestañas · fetch con locale)
+  "You will like also":
+   - Se rellena por prioridad: 1) vistos recientemente (JS)  2) misma categoría/tipo del producto
+     3) más vendidos como último recurso. Sin agotados. Sin el propio producto. Sin pestañas.
+      {%- when 'bea_related' -%}
+        {%- render 'bea-related', block: block, product: product -%}
+
+  v6.1: el fetch de "vistos recientemente" pedia '/products/...' a pelo (sin /fr, /es), por lo que
+  Shopify devolvia las tarjetas en el idioma por defecto (ingles). Ahora usa routes.root_url para
+  pedir siempre en el idioma activo.
+{%- endcomment -%}
+
+{%- liquid
+  assign s = block.settings
+  assign limit = s.limit | default: 6
+  if limit > 6
+    assign limit = 6
+  endif
+
+  # ===== Fuente principal: misma categoría del producto =====
+  # 1) product_type -> collection con ese handle  2) primera colección del producto  3) best sellers  4) all
+  assign type_handle = product.type | handleize
+  assign source = collections[type_handle]
+
+  if source == blank or source.products.size == 0
+    for c in product.collections
+      assign chandle = c.handle | downcase
+      # saltar colecciones "utilitarias" que no son de categoría real
+      unless chandle contains 'frontpage' or chandle contains 'all' or chandle contains 'best' or chandle contains 'bogo' or chandle contains 'nivel' or chandle contains 'tier' or chandle contains 'gift' or chandle contains 'regalo' or chandle contains 'sale' or chandle contains 'black' or chandle contains 'winter' or chandle contains 'birthday'
+        assign source = c
+        break
+      endunless
+    endfor
+  endif
+
+  if source == blank or source.products.size == 0
+    assign source = collections['best-sellers']
+  endif
+  if source == blank or source.products.size == 0
+    assign source = collections['bestsellers']
+  endif
+  if source == blank or source.products.size == 0
+    assign source = collections.all
+  endif
+-%}
+
+{{ 'component-card.css' | asset_url | stylesheet_tag }}
+{{ 'quick-add.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'quick-add.js' | asset_url }}" defer="defer"></script>
+
+<div id="bea-rel-{{ block.id }}" class="bea-rel" data-handle="{{ product.handle }}" data-limit="{{ limit }}" style="margin:26px 0 6px;font-family:'Inter',sans-serif;" {{ block.shopify_attributes }}>
+  <style>
+    #bea-rel-{{ block.id }} .bea-rel__title{text-align:center;font-size:13px;font-weight:600;color:#121212;margin:0 0 16px;letter-spacing:.01em;text-transform:uppercase;font-family:'Inter',sans-serif;}
+    #bea-rel-{{ block.id }} .bea-rel__row{display:grid;grid-template-columns:1fr 1fr;gap:12px 2px;align-items:start;}
+    #bea-rel-{{ block.id }} .bea-rel__cell{min-width:0;}
+    #bea-rel-{{ block.id }} .bea-rel__cell .price{display:none !important;}
+    #bea-rel-{{ block.id }} .bea-rel__price{font-family:'Inter',sans-serif;font-size:13px;font-weight:400;color:#121212;letter-spacing:-.02em;padding:5px 12px 0;}
+    #bea-rel-{{ block.id }} .bea-rel__cell .card__content{padding-bottom:0 !important;}
+    #bea-rel-{{ block.id }} .bea-rel__cell .card__information{padding-bottom:0 !important;margin-bottom:0 !important;}
+    #bea-rel-{{ block.id }} .bea-rel__cell .card-information{padding-bottom:0 !important;margin-bottom:0 !important;}
+    #bea-rel-{{ block.id }} .bea-rel__cell .bea-card__subheading{margin-top:4px !important;margin-bottom:0 !important;}
+    #bea-rel-{{ block.id }} .card__heading, #bea-rel-{{ block.id }} .bea-card__subheading, #bea-rel-{{ block.id }} .bea-rel__price, #bea-rel-{{ block.id }} .price{letter-spacing:-.04em !important;}
+    @media (max-width: 749px){
+      #bea-rel-{{ block.id }} .bea-rel__row{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);}
+      #bea-rel-{{ block.id }} .bea-rel__cell .card__content{padding-left:12px !important;padding-right:12px !important;box-sizing:border-box;}
+    }
+  </style>
+
+  {%- if s.title != blank -%}<div class="bea-rel__title">{{ s.title }}</div>{%- endif -%}
+
+  <div class="bea-rel__row" data-suggested-row>
+    {%- assign shown = 0 -%}
+    {%- for p in source.products limit: 24 -%}
+      {%- if shown >= limit -%}{%- break -%}{%- endif -%}
+      {%- unless p.available -%}{%- continue -%}{%- endunless -%}
+      {%- unless p.id == product.id -%}
+        <div class="bea-rel__cell" data-handle="{{ p.handle }}">
+          {%- render 'card-product', card_product: p, media_aspect_ratio: 'portrait', quick_add: 'standard', section_id: section.id, lazy_load: true -%}
+          <div class="bea-rel__price">{{ p.price | money }}</div>
+        </div>
+        {%- assign shown = shown | plus: 1 -%}
+      {%- endunless -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('bea-rel-{{ block.id }}');
+  if (!root) return;
+  var current = root.getAttribute('data-handle');
+  var limit = parseInt(root.getAttribute('data-limit'), 10) || 6;
+  var KEY = 'bea_recently_viewed';
+
+  /* Raiz localizada de la tienda ("/" en ingles, "/fr/" en frances, "/es/" en espanol).
+     Viene de Liquid, asi que siempre coincide con el idioma de la pagina actual. */
+  var beaRoot = {{ routes.root_url | json }};
+  if (beaRoot.charAt(beaRoot.length - 1) !== '/') beaRoot += '/';
+
+  /* Registrar producto actual como visto */
+  try {
+    var seen = JSON.parse(localStorage.getItem(KEY) || '[]');
+    seen = seen.filter(function (h) { return h !== current; });
+    seen.unshift(current);
+    seen = seen.slice(0, 16);
+    localStorage.setItem(KEY, JSON.stringify(seen));
+  } catch (e) {}
+
+  /* Rellenar por prioridad: 1) vistos recientemente (tarjetas reales)  2) los de categoría ya pintados */
+  try {
+    var viewed = JSON.parse(localStorage.getItem(KEY) || '[]').filter(function (h) { return h !== current; }).slice(0, limit);
+    if (viewed.length) {
+      var row = root.querySelector('[data-suggested-row]');
+      Promise.all(viewed.map(function (h) {
+        /* Pedimos cada tarjeta en el idioma activo (beaRoot) para que llegue traducida */
+        return fetch(beaRoot + 'products/' + h + '?section_id=bea-recently-card').then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; });
+      })).then(function (htmls) {
+        var tmp = document.createElement('div');
+        var cells = [], handles = [];
+        htmls.forEach(function (html) {
+          tmp.innerHTML = html;
+          var cell = tmp.querySelector('.bea-rel__cell');
+          /* solo vistos que sigan disponibles: la seccion bea-recently-card no pinta agotados si asi se configuro;
+             aqui aceptamos lo que llegue, y el relleno de categoria (ya en el DOM) completa hasta limit */
+          if (cell) { cells.push(cell.outerHTML); handles.push(cell.getAttribute('data-handle')); }
+        });
+        var existing = Array.prototype.slice.call(row.querySelectorAll('.bea-rel__cell'));
+        var fill = existing.filter(function (c) {
+          var h = c.getAttribute('data-handle');
+          return h !== current && handles.indexOf(h) === -1;
+        }).map(function (c) { return c.outerHTML; });
+        var all = cells.concat(fill).slice(0, limit);
+        if (all.length) { row.innerHTML = all.join(''); }
+      });
+    }
+  } catch (e) {}
+})();
+</script>

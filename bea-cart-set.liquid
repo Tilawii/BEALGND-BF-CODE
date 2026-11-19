@@ -1,0 +1,451 @@
+{%- comment -%}
+  bea-cart-set.liquid · BEALGND · "Regalo incluido" (oct 2026) · sustituye a bea-gift-picker en el cart drawer.
+  part: 'strip' (por defecto) -> franja "Complete your set · 50% OFF" anclada abajo + datos de regalos para "Change".
+  part: 'pill'                -> pastilla verde "You save €X with your free gift" encima del checkout.
+  Logica de oferta igual que la Shopify Function 'bogo-jerarquia' (O1 manda sobre O2). Solo pinta: no toca precios.
+  {%- render 'bea-cart-set' -%}  ·  {%- render 'bea-cart-set', part: 'pill' -%}
+{%- endcomment -%}
+{%- liquid
+  assign part = part | default: 'strip'
+
+  assign gift_save = 0
+  for it in cart.items
+    assign it_gift = false
+    if it.properties._bea_gift != blank or it.properties._bea_gift_for != blank
+      assign it_gift = true
+    elsif it.final_line_price == 0 and it.original_line_price > 0
+      assign it_gift = true
+    endif
+    if it_gift
+      assign d = it.original_line_price | minus: it.final_line_price
+      assign gift_save = gift_save | plus: d
+    endif
+  endfor
+-%}
+
+{%- liquid
+  assign bf_save = 0
+  for it in cart.items
+    assign ic = it.variant.compare_at_price | default: 0
+    if it.final_line_price > 0 and ic > it.original_price
+      assign dd = ic | minus: it.original_price | times: it.quantity
+      assign bf_save = bf_save | plus: dd
+    endif
+  endfor
+  assign all_save = cart.total_discount | plus: bf_save
+-%}
+{%- if part == 'pill' -%}
+  {%- if all_save > 0 -%}
+    <div class="bea-save-pill">
+      <span class="bea-save-pill__in">
+        <svg viewBox="0 0 11 11" fill="none" stroke="#218519" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.833 3.667h7.334c.253 0 .458.205.458.458v.917a.458.458 0 0 1-.458.458H1.833a.458.458 0 0 1-.458-.458v-.917c0-.253.205-.458.458-.458Z"/><path d="M5.5 3.667v5.958"/><path d="M8.708 5.5v3.208a.917.917 0 0 1-.916.917H3.208a.917.917 0 0 1-.916-.917V5.5"/><path d="M3.438 3.667a1.146 1.146 0 0 1 0-2.292C5.042 1.375 5.5 3.667 5.5 3.667s.458-2.292 2.063-2.292a1.146 1.146 0 0 1 0 2.292"/></svg>
+        {%- assign bea_amt = all_save | money -%}
+        {%- if bf_save > 0 -%}
+          {{ 'bealgnd.gi.cart_save_total' | t: amount: bea_amt }}
+        {%- elsif cart.total_discount > gift_save -%}
+          {{ 'bealgnd.gi.cart_save_set' | t: amount: bea_amt }}
+        {%- else -%}
+          {{ 'bealgnd.gi.cart_save_gift' | t: amount: bea_amt }}
+        {%- endif -%}
+      </span>
+    </div>
+  {%- endif -%}
+{%- else -%}
+  {%- liquid
+    assign o1_buy = collections['bogo-oferta-1-compra']
+    assign o2_buy = collections['bogo-oferta-2-compra']
+    assign has_o1 = false
+    assign has_o2 = false
+    assign bag_color = ''
+    assign bag_color1 = ''
+    assign bag_color2 = ''
+    # Precio del bolso mas caro de la oferta 2 en el carrito: la Function solo da el 50 % a un upsell que no sea mas caro que el
+    assign o2_max = 0
+    for it in cart.items
+      if it.properties._bea_gift != blank or it.properties._bea_gift_for != blank or it.final_line_price == 0
+        continue
+      endif
+      assign it_buy = false
+      assign it_o1 = false
+      for p in o1_buy.products
+        if p.id == it.product.id
+          assign has_o1 = true
+          assign it_buy = true
+          assign it_o1 = true
+          break
+        endif
+      endfor
+      for p in o2_buy.products
+        if p.id == it.product.id
+          assign has_o2 = true
+          assign it_buy = true
+          if it.variant.price > o2_max
+            assign o2_max = it.variant.price
+          endif
+          break
+        endif
+      endfor
+      if it_buy
+        for opt in it.product.options_with_values
+          assign on = opt.name | downcase
+          if on contains 'color' or on contains 'colour' or on contains 'colores' or on contains 'couleur'
+            if it_o1 and bag_color1 == ''
+              assign bag_color1 = it.variant.options[forloop.index0]
+            endif
+            if bag_color2 == ''
+              assign bag_color2 = it.variant.options[forloop.index0]
+            endif
+            break
+          endif
+        endfor
+      endif
+    endfor
+    if has_o1
+      assign bag_color = bag_color1
+    else
+      assign bag_color = bag_color2
+    endif
+    assign up_coll = null
+    if has_o1
+      assign up_coll = collections['bogo-oferta-1-upsell']
+    elsif has_o2
+      assign up_coll = collections['bogo-oferta-2-upsell']
+    endif
+    assign show_strip = false
+    if cart != empty and up_coll
+      for gp in up_coll.products
+        assign gp_ok = gp.available
+        if has_o1 == false and gp.price > o2_max
+          assign gp_ok = false
+        endif
+        if gp_ok
+          assign in_cart = false
+          for it in cart.items
+            if it.product.id == gp.id
+              assign in_cart = true
+              break
+            endif
+          endfor
+          unless in_cart
+            assign show_strip = true
+            break
+          endunless
+        endif
+      endfor
+    endif
+  -%}
+
+  {%- if cart != empty and part != 'cards' -%}
+    {%- comment -%} Regalos posibles por oferta: los usa "Change" en la linea del regalo {%- endcomment -%}
+    <script type="application/json" id="bea-cart-gift-data">
+      {
+        "buy1": [{%- for p in o1_buy.products -%}{{ p.id }}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+        "buy2": [{%- for p in o2_buy.products -%}{{ p.id }}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+        "g1": [{%- assign f = true -%}{%- for gp in collections['bogo-oferta-1-regalo'].products -%}{%- if gp.available -%}{%- unless f -%},{%- endunless -%}{%- assign f = false -%}{%- render 'bea-gi-product-json', p: gp -%}{%- endif -%}{%- endfor -%}],
+        "g2": [{%- assign f = true -%}{%- for gp in collections['bogo-oferta-2-regalo'].products -%}{%- if gp.available -%}{%- unless f -%},{%- endunless -%}{%- assign f = false -%}{%- render 'bea-gi-product-json', p: gp -%}{%- endif -%}{%- endfor -%}],
+        "ups": [{%- assign f = true -%}{%- if show_strip -%}{%- for gp in up_coll.products -%}{%- if gp.available -%}{%- unless f -%},{%- endunless -%}{%- assign f = false -%}{%- render 'bea-gi-product-json', p: gp -%}{%- endif -%}{%- endfor -%}{%- endif -%}]
+      }
+    </script>
+  {%- endif -%}
+
+  {%- if show_strip and part == 'cards' -%}
+    <div class="bea-set" data-bag-color="{{ bag_color | escape }}">
+      <div class="bea-set__head">
+        <svg viewBox="0 0 15 15" fill="none" stroke="#121212" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.875 8.375 8.375 12.875a1.25 1.25 0 0 1-1.75 0L1.875 8.125v-6.25h6.25l4.75 4.75a1.25 1.25 0 0 1 0 1.75Z"/><path d="M5.5 4.688a.813.813 0 1 1-1.625 0 .813.813 0 0 1 1.625 0Z"/></svg>
+        <span><b>{{ 'bealgnd.gi.strip_title' | t }}</b><span class="bea-set__off"> · {{ 'bealgnd.gi.off50' | t }}</span></span>
+      </div>
+      <div class="bea-set__track">
+        {%- assign ups_sorted = up_coll.products | sort: 'best-selling' -%}
+        {%- for gp in ups_sorted -%}
+          {%- liquid
+            assign gp_ok = gp.available
+            if has_o1 == false and gp.price > o2_max
+              assign gp_ok = false
+            endif
+          -%}
+          {%- if gp_ok -%}
+            {%- assign in_cart = false -%}
+            {%- for it in cart.items -%}{%- if it.product.id == gp.id -%}{%- assign in_cart = true -%}{%- break -%}{%- endif -%}{%- endfor -%}
+            {%- unless in_cart -%}
+              {%- liquid
+                assign cidx0 = -1
+                for opt in gp.options_with_values
+                  assign on = opt.name | downcase
+                  if on contains 'color' or on contains 'colour' or on contains 'colores' or on contains 'couleur'
+                    assign cidx0 = forloop.index0
+                    break
+                  endif
+                endfor
+                assign uv = null
+                if cidx0 >= 0 and bag_color != ''
+                  assign bc = bag_color | downcase | replace: 'negro', 'black' | replace: 'noir', 'black' | replace: 'verde', 'green' | replace: 'vert', 'green' | replace: 'azul', 'blue' | replace: 'bleu', 'blue' | replace: 'marrón', 'brown' | replace: 'marron', 'brown' | replace: 'blanco', 'white' | replace: 'blanc', 'white' | replace: 'rojo', 'red' | replace: 'rouge', 'red'
+                  for v in gp.variants
+                    assign vc = v.options[cidx0] | downcase | replace: 'negro', 'black' | replace: 'noir', 'black' | replace: 'verde', 'green' | replace: 'vert', 'green' | replace: 'azul', 'blue' | replace: 'bleu', 'blue' | replace: 'marrón', 'brown' | replace: 'marron', 'brown' | replace: 'blanco', 'white' | replace: 'blanc', 'white' | replace: 'rojo', 'red' | replace: 'rouge', 'red'
+                    if v.available and vc == bc
+                      assign uv = v
+                      break
+                    endif
+                  endfor
+                endif
+                if uv == null
+                  assign uv = gp.selected_or_first_available_variant
+                endif
+                assign half = uv.price | divided_by: 2.0 | round
+                assign uimg = uv.image | default: gp.featured_image
+              -%}
+              <div class="bea-set__card" data-pid="{{ gp.id }}" data-vid="{{ uv.id }}">
+                <span class="bea-set__img">{%- if uimg -%}<img src="{{ uimg | image_url: width: 300 }}" alt="{{ gp.title | escape }}" loading="lazy" width="104" height="104">{%- endif -%}</span>
+                <span class="bea-set__txt">
+                  <span class="bea-set__name">{{ gp.title }}</span>
+                  <span class="bea-set__line"><b data-bea-now>{{ half | money }}</b><s data-bea-was>{{ uv.price | money }}</s><span class="bea-tag">{{ 'bealgnd.gi.off50' | t }}</span></span>
+                  {%- if cidx0 >= 0 and gp.options_with_values[cidx0].values.size > 1 -%}
+                    <span class="bea-set__dots" role="radiogroup" aria-label="{{ 'bealgnd.gi.choose_color' | t | escape }}">
+                      {%- for val in gp.options_with_values[cidx0].values -%}
+                        {%- assign dv = null -%}
+                        {%- for v in gp.variants -%}{%- if v.options[cidx0] == val.name and v.available -%}{%- assign dv = v -%}{%- break -%}{%- endif -%}{%- endfor -%}
+                        {%- if dv -%}
+                          {%- liquid
+                            assign dcol = val.swatch.color | append: ''
+                            if dcol == ''
+                              assign cn = val.name | downcase | replace: 'negro', 'black' | replace: 'noir', 'black' | replace: 'verde', 'green' | replace: 'vert', 'green' | replace: 'azul', 'blue' | replace: 'bleu', 'blue' | replace: 'marrón', 'brown' | replace: 'marron', 'brown' | replace: 'blanco', 'white' | replace: 'blanc', 'white' | replace: 'rojo', 'red' | replace: 'rouge', 'red' | replace: 'amarillo', 'yellow' | replace: 'jaune', 'yellow' | replace: 'gris', 'grey' | replace: 'rosa', 'pink' | replace: 'rose', 'pink'
+                              assign dcol = '#cfcfcf'
+                              if cn contains 'black'
+                                assign dcol = '#121212'
+                              elsif cn contains 'white'
+                                assign dcol = '#ffffff'
+                              elsif cn contains 'green'
+                                assign dcol = '#2a602f'
+                              elsif cn contains 'yellow'
+                                assign dcol = '#ecc00b'
+                              elsif cn contains 'blue'
+                                assign dcol = '#3b6fd4'
+                              elsif cn contains 'brown'
+                                assign dcol = '#7a4a2b'
+                              elsif cn contains 'red'
+                                assign dcol = '#b3261e'
+                              elsif cn contains 'grey'
+                                assign dcol = '#9a9a9a'
+                              elsif cn contains 'beige'
+                                assign dcol = '#d8c3a5'
+                              elsif cn contains 'pink'
+                                assign dcol = '#e8a0b4'
+                              endif
+                            endif
+                            assign dimg = dv.image | default: gp.featured_image
+                          -%}
+                          <button type="button" class="bea-set__dot{% if dv.options[cidx0] == uv.options[cidx0] %} is-on{% endif %}" role="radio" aria-checked="{% if dv.options[cidx0] == uv.options[cidx0] %}true{% else %}false{% endif %}" data-bea-dot data-vid="{{ dv.id }}" data-price="{{ dv.price }}" data-img="{% if dimg %}{{ dimg | image_url: width: 300 }}{% endif %}" aria-label="{{ val.name | escape }}" title="{{ val.name | escape }}"><span style="background:{{ dcol }}"></span></button>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </span>
+                  {%- endif -%}
+                  <button type="button" class="bea-set__add" data-bea-set-add>+ {{ 'products.product.add_to_cart' | t }}</button>
+                </span>
+              </div>
+            {%- endunless -%}
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+
+  {%- unless part == 'cards' -%}
+  {%- render 'bea-gift-core' -%}
+  <style>
+    .cart-drawer .bea-set{margin:6px 16px 18px;padding:16px 0 0;border-top:1px solid #ececec;display:flex;flex-direction:column;gap:10px;font-family:'Inter',sans-serif;letter-spacing:normal;color:#121212;}
+    .bea-set__head{display:flex;align-items:center;gap:7px;font-size:13px;line-height:normal;}
+    .bea-set__head svg{width:15px;height:15px;flex:0 0 auto;display:block;}
+    .bea-set__head b{font-weight:600;}
+    .bea-set__off{color:#218519;font-weight:600;}
+    .bea-set__track{display:flex;flex-direction:column;gap:8px;}
+    .bea-set__card{display:flex;align-items:center;gap:14px;background:#f7f7f7;border-radius:10px;padding:12px;}
+    .bea-set__img{flex:0 0 104px;width:104px;height:104px;border-radius:8px;background:#fff;overflow:hidden;display:block;}
+    .bea-set__img img{width:100%;height:100%;object-fit:cover;display:block;}
+    .bea-set__txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px;line-height:normal;}
+    .bea-set__name{font-size:13.5px;font-weight:500;}
+    .bea-set__line{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+    .bea-set__line b{font-size:13.5px;font-weight:600;}
+    .bea-set__line s{font-size:12px;font-weight:300;color:#8c8c8c;}
+    .bea-set__dots{display:flex;flex-wrap:wrap;gap:8px;padding:1px 0;}
+    .bea-set__dot{position:relative;width:22px;height:22px;border-radius:50%;border:1px solid transparent;padding:2px;margin:0;background:none;cursor:pointer;display:flex;box-sizing:border-box;}
+    .bea-set__dot span{flex:1 1 auto;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);}
+    .bea-set__dot.is-on{border-color:#121212;}
+    .bea-set__dot::after{content:'';position:absolute;inset:-5px;}
+    .bea-set__add{align-self:stretch;background:#fff;border:1px solid #121212;border-radius:6px;padding:9px 10px;margin:2px 0 0;font-family:inherit;font-size:12.5px;font-weight:500;line-height:normal;color:#121212;cursor:pointer;}
+    .bea-set__add[disabled]{opacity:.5;cursor:default;}
+    .bea-save-pill{display:flex;justify-content:center;margin:0 0 8px;}
+    .bea-save-pill__in{display:inline-flex;align-items:center;gap:5px;background:#eaf6e7;border-radius:20px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:10px;font-weight:400;line-height:normal;letter-spacing:normal;color:#21851a;}
+    .bea-save-pill__in svg{width:11px;height:11px;flex:0 0 auto;display:block;}
+  </style>
+  <script>
+    (function () {
+      if (window.__beaCartSetBound) return;
+      window.__beaCartSetBound = true;
+      var T = {
+        chooseColor: {{ 'bealgnd.gi.choose_color' | t | json }},
+        sheetTitle: {{ 'bealgnd.gi.sheet_title' | t | json }},
+        recommended: {{ 'bealgnd.gi.recommended' | t | json }},
+        saveGift: {{ 'bealgnd.gi.save_gift' | t | json }},
+        save: {{ 'bealgnd.gi.save' | t | json }},
+        color: {{ 'bealgnd.gi.color' | t | json }},
+        close: {{ 'bealgnd.gi.close' | t | json }},
+        freeGift: {{ 'bealgnd.gi.free_gift' | t | json }},
+        off50: {{ 'bealgnd.gi.off50' | t | json }}
+      };
+      var DEF = { 'croc-duffle-bag': 'macbook-croc-case', 'monogram-duffle-bag': 'bealgnd-pouch-handbag-monogram', 'monogram-backpack': 'bealgnd-pouch-handbag-monogram' };
+      function data() {
+        var el = document.getElementById('bea-cart-gift-data');
+        try { return el ? JSON.parse(el.textContent) : null; } catch (e) { return null; }
+      }
+      function refresh() { return typeof window.beaCartRefresh === 'function' ? window.beaCartRefresh() : Promise.resolve(); }
+      function post(url, body) {
+        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) })
+          .then(function (r) { if (!r.ok) throw new Error(url); return r.json(); });
+      }
+      function vById(p, id) { for (var i = 0; i < p.variants.length; i++) if (String(p.variants[i].id) === String(id)) return p.variants[i]; return p.variants[0]; }
+      function tag(txt, icon) { return '<span class="bea-tag">' + (icon ? window.BEA_ICON_GIFT : '') + window.beaEsc(txt) + '</span>'; }
+
+      /* Candado: nunca mas regalos que bolsos de la oferta activa (la Function deja gratis la linea entera de regalo).
+         Se ejecuta tras cualquier cambio del carrito (tambien en la pagina /cart) y al cargar /cart. */
+      var guarding = false;
+      function guard() {
+        var d = data(); if (!d || guarding) return Promise.resolve(false);
+        guarding = true;
+        return fetch('/cart.js', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (cart) {
+          var b1 = (d.buy1 || []).map(String), b2 = (d.buy2 || []).map(String), gids = {};
+          (d.g1 || []).concat(d.g2 || []).forEach(function (g) { g.variants.forEach(function (v) { gids[String(v.id)] = true; }); });
+          var isGift = function (it) { var p = it.properties || {}; return !!(p._bea_gift || p._bea_gift_for || (it.final_line_price === 0 && it.original_line_price > 0 && gids[String(it.variant_id)])); };
+          var items = cart.items || [];
+          var hasO1 = items.some(function (it) { return !isGift(it) && b1.indexOf(String(it.product_id)) > -1; });
+          var act = hasO1 ? b1 : b2, qual = 0, gl = [], gt = 0;
+          /* Solo cuentan las unidades a precio completo: un bolso que ya va al 50 % no da derecho a regalo (antes Magnet + Dopp al 50 % = 2 regalos) */
+          items.forEach(function (it) {
+            if (isGift(it)) { gl.push(it); gt += it.quantity; return; }
+            if (act.indexOf(String(it.product_id)) === -1) return;
+            var halfOff = it.original_price > 0 ? Math.round((it.original_line_price - it.final_line_price) / (it.original_price / 2)) : 0;
+            qual += Math.max(0, it.quantity - halfOff);
+          });
+          if (gt <= qual) return false;
+          var extra = gt - qual, upd = {};
+          for (var i = gl.length - 1; i >= 0 && extra > 0; i--) { var cut = Math.min(gl[i].quantity, extra); upd[gl[i].key] = gl[i].quantity - cut; extra -= cut; }
+          return post('/cart/update.js', { updates: upd }).then(function () { return true; });
+        }).catch(function () { return false; }).then(function (changed) { guarding = false; return changed; });
+      }
+      function afterGuard(changed) {
+        if (!changed) return;
+        if (/\/cart\/?$/.test(location.pathname)) location.reload(); else refresh();
+      }
+      window.beaGiftGuard = function () { return guard().then(afterGuard); };
+      /* PUB_SUB_EVENTS es una const de constants.js (no cuelga de window) y puede cargarse despues: se engancha al estar listo el DOM */
+      var beaSubbed = false;
+      function beaSub() {
+        if (beaSubbed) return true;
+        var ev = typeof PUB_SUB_EVENTS !== 'undefined' ? PUB_SUB_EVENTS : window.PUB_SUB_EVENTS;
+        if (typeof subscribe !== 'function' || !ev || !ev.cartUpdate) return false;
+        subscribe(ev.cartUpdate, function () { setTimeout(window.beaGiftGuard, 300); });
+        beaSubbed = true;
+        return true;
+      }
+      if (!beaSub()) document.addEventListener('DOMContentLoaded', beaSub);
+      if (/\/cart\/?$/.test(location.pathname)) setTimeout(window.beaGiftGuard, 500);
+
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+
+        /* + Add for €X (franja 50 %) */
+        var add = t.closest('[data-bea-set-add]');
+        if (add) {
+          e.preventDefault();
+          var card = add.closest('.bea-set__card');
+          if (!card || add.disabled) return;
+          add.disabled = true;
+          post('/cart/add.js', { items: [{ id: Number(card.getAttribute('data-vid')), quantity: 1 }] })
+            .then(refresh).catch(function () { add.disabled = false; });
+          return;
+        }
+
+        /* Puntos de color de las tarjetas al 50 % */
+        var dot = t.closest('[data-bea-dot]');
+        if (dot) {
+          e.preventDefault();
+          var cd = dot.closest('.bea-set__card'); if (!cd) return;
+          cd.setAttribute('data-vid', dot.getAttribute('data-vid'));
+          cd.querySelectorAll('[data-bea-dot]').forEach(function (x) { x.classList.toggle('is-on', x === dot); x.setAttribute('aria-checked', x === dot ? 'true' : 'false'); });
+          var pr = Number(dot.getAttribute('data-price')) || 0;
+          var im = cd.querySelector('.bea-set__img img'), di = dot.getAttribute('data-img'); if (im && di) im.src = di;
+          var w = cd.querySelector('[data-bea-was]'); if (w) w.textContent = window.beaMoney(pr);
+          var nw = cd.querySelector('[data-bea-now]'); if (nw) nw.textContent = window.beaMoney(Math.round(pr / 2));
+          return;
+        }
+
+        /* Boton de esquina: color del producto al 50 % */
+        var chev = t.closest('[data-bea-set-color]');
+        if (chev) {
+          e.preventDefault();
+          var c = chev.closest('.bea-set__card'), d = data();
+          if (!c || !d) return;
+          var p = null;
+          (d.ups || []).forEach(function (u) { if (String(u.pid) === c.getAttribute('data-pid')) p = u; });
+          if (!p) return;
+          window.BeaSheet.picker({
+            title: T.chooseColor, saveLabel: T.save, t: { recommended: T.recommended, color: T.color, close: T.close },
+            items: [{ pid: p.pid, title: p.title, colors: p.colors, variants: p.variants }], pid: p.pid, vid: c.getAttribute('data-vid'),
+            priceHtml: function (it, v) { return '<s>' + window.beaMoney(v.price) + '</s><b>' + window.beaMoney(Math.round(v.price / 2)) + '</b>' + tag(T.off50, false); },
+            onSave: function (it, v) {
+              c.setAttribute('data-vid', v.id);
+              var img = c.querySelector('.bea-set__img img'); if (img && v.img) img.src = v.img;
+              var was = c.querySelector('[data-bea-was]'); if (was) was.textContent = window.beaMoney(v.price);
+              var now = c.querySelector('[data-bea-now]'); if (now) now.textContent = window.beaMoney(Math.round(v.price / 2));
+              var col = c.querySelector('[data-bea-color]'); if (col) col.textContent = v.color;
+            }
+          });
+          return;
+        }
+
+        /* "Change" en la linea del regalo */
+        var ch = t.closest('[data-bea-gift-change]');
+        if (ch) {
+          e.preventDefault();
+          var d2 = data(); if (!d2) return;
+          var row = ch.closest('tr');
+          var key = ch.getAttribute('data-line-key');
+          var forVid = ch.getAttribute('data-gift-for');
+          var curVid = ch.getAttribute('data-variant-id');
+          var qty = parseInt(ch.getAttribute('data-qty'), 10) || 1;
+          var bagRow = (forVid ? document.querySelector('#CartDrawer tr.cart-item[data-variant-id="' + forVid + '"]:not(.cart-item--gift)') : null) || document.querySelector('#CartDrawer tr.cart-item[data-buy]');
+          var bagPid = bagRow ? bagRow.getAttribute('data-product-id') : null;
+          var bagHandle = bagRow ? bagRow.getAttribute('data-handle') : null;
+          var inO1 = function (pid) { return d2.buy1.map(String).indexOf(String(pid)) > -1; };
+          var list;
+          if (bagPid) list = inO1(bagPid) ? d2.g1 : d2.g2;
+          else {
+            var any1 = false;
+            document.querySelectorAll('#CartDrawer tr.cart-item:not(.cart-item--gift)').forEach(function (r) { if (inO1(r.getAttribute('data-product-id'))) any1 = true; });
+            list = any1 ? d2.g1 : d2.g2;
+          }
+          list = (list || []).filter(function (g) { return String(g.pid) !== String(bagPid) && g.variants.length; });
+          if (!list.length) return;
+          var defH = bagHandle && DEF[bagHandle] ? DEF[bagHandle] : 'tarjetero-lgnd-monogram';
+          var cur = null;
+          list.forEach(function (g) { g.variants.forEach(function (v) { if (String(v.id) === String(curVid)) cur = g; }); });
+          var items = list.map(function (g) { return { pid: g.pid, title: g.title, rec: g.handle === defH && list.length > 1, colors: g.colors, variants: g.variants }; });
+          items.sort(function (a, b) { return (b.rec ? 1 : 0) - (a.rec ? 1 : 0) || (b.variants[0].price - a.variants[0].price); });
+          window.BeaSheet.picker({
+            title: T.sheetTitle, saveLabel: T.saveGift, t: { recommended: T.recommended, color: T.color, close: T.close },
+            items: items, pid: cur ? cur.pid : items[0].pid, vid: cur ? curVid : items[0].variants[0].id,
+            priceHtml: function (it, v) { return '<s>' + window.beaMoney(v ? v.price : 0) + '</s>' + tag(T.freeGift, true); },
+            onSave: function (it, v) {
+              if (String(v.id) === String(curVid)) return null;
+              var props = { _bea_gift: '1' };
+              return post('/cart/change.js', { id: key, quantity: 0 })
+                .then(function () { return post('/cart/add.js', { items: [{ id: Number(v.id), quantity: qty, properties: props }] }); })
+                .then(refresh);
+            }
+          });
+          return;
+        }
+      });
+    })();
+  </script>
+  {%- endunless -%}
+{%- endif -%}

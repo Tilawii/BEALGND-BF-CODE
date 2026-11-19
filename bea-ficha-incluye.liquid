@@ -1,0 +1,89 @@
+{%- comment -%}
+bea-ficha-incluye.liquid · BEALGND · Ficha nueva (nov 2026)
+«Qué incluye»: foto + lista con ✓. Contenido del formulario «Ficha de producto».
+El regalo NO se escribe a mano: si la ficha tiene oferta, se añade solo en verde leyendo los datos
+que ya genera bea-bogo (script #bea-gi-data-*). Sin oferta (p. ej. Basic Crossbody) no sale.
+{%- endcomment -%}
+{%- liquid
+  assign f = product.metafields.custom.ficha.value
+  if f == blank
+    assign f = metaobjects.bea_ficha_producto[product.handle]
+  endif
+  assign has = false
+  if f != blank
+    if f.incluye_foto != blank or f.incluye_1 != blank
+      assign has = true
+    endif
+  endif
+-%}
+{%- if has -%}
+<div id="bea-fin-{{ section.id }}" class="bea-fin">
+  <style>
+    #bea-fin-{{ section.id }}{font-family:'Inter',sans-serif;color:#121212;padding:30px 15px 10px;}
+    #bea-fin-{{ section.id }} .bea-fin__in{max-width:760px;margin:0 auto;}
+    #bea-fin-{{ section.id }} .bea-fin__t{font-size:14px;font-weight:500;text-transform:uppercase;text-align:center;letter-spacing:-.02em;margin:0 0 14px;}
+    #bea-fin-{{ section.id }} .bea-fin__img{display:block;width:100%;aspect-ratio:3/2;height:auto;object-fit:cover;background:#f2f2f2;margin:0 0 16px;}
+    #bea-fin-{{ section.id }} .bea-fin__t{color:#121212;font-family:'Inter',sans-serif;}
+    #bea-fin-{{ section.id }} .bea-fin__list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+    #bea-fin-{{ section.id }} .bea-fin__li{font-size:12px;letter-spacing:-.02em;display:flex;gap:8px;align-items:baseline;}
+    #bea-fin-{{ section.id }} .bea-fin__ck{color:#121212;}
+    #bea-fin-{{ section.id }} .bea-fin__li--gift,#bea-fin-{{ section.id }} .bea-fin__li--gift .bea-fin__ck{color:#218519;font-weight:500;}
+    @media (min-width:990px){
+      #bea-fin-{{ section.id }}{padding:80px 60px 40px;}
+      #bea-fin-{{ section.id }} .bea-fin__in:has(.bea-fin__img){max-width:1180px;display:grid;grid-template-columns:1.25fr 1fr;column-gap:64px;align-items:center;}
+      #bea-fin-{{ section.id }} .bea-fin__in:has(.bea-fin__img) .bea-fin__img{grid-column:1;grid-row:1 / span 2;margin:0;}
+      #bea-fin-{{ section.id }} .bea-fin__in:has(.bea-fin__img) .bea-fin__t{grid-column:2;text-align:left;align-self:end;}
+      #bea-fin-{{ section.id }} .bea-fin__in:has(.bea-fin__img) .bea-fin__list{grid-column:2;align-self:start;}
+      #bea-fin-{{ section.id }} .bea-fin__t{font-size:16px;}
+      #bea-fin-{{ section.id }} .bea-fin__li{font-size:14px;}
+    }
+  </style>
+  <div class="bea-fin__in">
+    <h2 class="bea-fin__t">{{ section.settings.title }}</h2>
+    {%- if f.incluye_foto != blank -%}
+      {{ f.incluye_foto | image_url: width: 1200 | image_tag: class: 'bea-fin__img', loading: 'lazy', sizes: '(min-width: 990px) 760px, 100vw', widths: '400, 600, 800, 1200', alt: product.title }}
+    {%- endif -%}
+    <ul class="bea-fin__list" data-bea-fin-list>
+      {%- for i in (1..5) -%}
+        {%- assign k = 'incluye_' | append: i -%}
+        {%- if f[k] != blank -%}<li class="bea-fin__li"><span class="bea-fin__ck">✓</span><span>{{ f[k] }}</span></li>{%- endif -%}
+      {%- endfor -%}
+    </ul>
+  </div>
+  <script>
+  (function(){
+    var root=document.getElementById('bea-fin-{{ section.id }}'); if(!root) return;
+    var list=root.querySelector('[data-bea-fin-list]'); var label={{ section.settings.gift_label | json }};
+    function paint(){
+      var el=document.querySelector('script[id^="bea-gi-data-"]'); var old=list.querySelector('.bea-fin__li--gift');
+      if(window.BEA_OFFER&&window.BEA_OFFER.mode!=='gift'){ if(old) old.remove(); return; }
+      if(!el){ if(old) old.remove(); return; }
+      var d; try{ d=JSON.parse(el.textContent); }catch(e){ return; }
+      var gifts=(d&&d.gifts)||[]; if(!gifts.length){ if(old) old.remove(); return; }
+      var g=null; for(var i=0;i<gifts.length;i++){ if(gifts[i].handle===d.defGift){ g=gifts[i]; break; } }
+      if(!g) g=gifts[0];
+      var li=old||document.createElement('li'); li.className='bea-fin__li bea-fin__li--gift';
+      li.innerHTML='<span class="bea-fin__ck">✓</span><span></span>'; li.lastChild.textContent=g.title+' · '+label;
+      if(!old) list.appendChild(li);
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',paint); else paint();
+    document.addEventListener('bea:offer',paint);
+  })();
+  </script>
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "BEA · Qué incluye (ficha)",
+  "tag": "section",
+  "class": "section bea-ficha-incluye",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "What's in the box" },
+    { "type": "text", "id": "gift_label", "label": "Etiqueta del regalo", "default": "FREE GIFT" },
+    { "type": "paragraph", "content": "La foto y la lista salen del formulario «Ficha de producto». El regalo se añade solo si el producto tiene oferta." }
+  ],
+  "presets": [{ "name": "BEA · Qué incluye (ficha)" }]
+}
+{% endschema %}

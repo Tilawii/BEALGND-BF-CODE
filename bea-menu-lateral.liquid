@@ -1,0 +1,22 @@
+{%- comment -%}
+  BEALGND · Menú lateral (móvil). Todo se edita en Personalizar > BEALGND · Menú lateral.
+  Esta sección no se ve sola: genera el contenido del menú en un <template> y el snippet
+  header-drawer lo coloca dentro del cajón del menú. Debe ir ANTES de "Encabezado" en el grupo.
+{%- endcomment -%}
+<template id="BeaMenuSource">
+  {%- content_for 'block', type: '_bea-menu-promo', id: 'promo' -%}
+  {%- content_for 'block', type: '_bea-menu-big-list', id: 'big' -%}
+  {%- content_for 'block', type: '_bea-menu-list', id: 'list' -%}
+</template>
+
+{% schema %}
+{
+  "name": "BEALGND · Menú lateral",
+  "tag": "div",
+  "class": "bea-menu-lateral-section",
+  "enabled_on": { "groups": ["header"] },
+  "settings": [
+    { "type": "paragraph", "content": "Contenido del menú lateral (móvil). Abre el menú en la vista previa para ver los cambios." }
+  ]
+}
+{% endschema %}

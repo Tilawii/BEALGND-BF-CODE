@@ -1,0 +1,102 @@
+{%- comment -%}
+bea-ficha-resenas.liquid · BEALGND · Ficha nueva (nov 2026)
+Reseñas en carrusel, en su propia sección (destino del clic en «694 reviews» de arriba).
+Lee las mismas reseñas que hoy: metacampos del producto reviews.r1_text ... r6 (texto, nombre, estrellas, foto, verified).
+Oculta el desplegable «Reviews» antiguo de los acordeones para que no salgan dos veces.
+{%- endcomment -%}
+{%- liquid
+  assign mf = product.metafields.reviews
+  assign n = 0
+  for i in (1..6)
+    assign k = 'r' | append: i | append: '_text'
+    if mf[k] != blank
+      assign n = n | plus: 1
+    endif
+  endfor
+  assign bea_reviews_count = product.metafields.custom.reviews_count | default: '694'
+-%}
+{%- if n > 0 -%}
+<div id="bea-frv-{{ section.id }}" class="bea-frv" data-bea-frv>
+  <style>
+    [data-bea-reviews-acc]{display:none !important;}
+    #bea-frv-{{ section.id }}{font-family:'Inter',sans-serif;color:#121212;padding:34px 0 10px;scroll-margin-top:90px;}
+    #bea-frv-{{ section.id }} .bea-frv__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 15px;margin:0 0 6px;}
+    #bea-frv-{{ section.id }} .bea-frv__t{color:#121212;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:-.02em;margin:0;}
+    #bea-frv-{{ section.id }} .bea-frv__sum{display:flex;align-items:center;gap:8px;padding:0 15px;margin:0 0 14px;font-size:12px;}
+    #bea-frv-{{ section.id }} .bea-frv__sum .s{display:inline-flex;gap:3px;}
+    #bea-frv-{{ section.id }} .bea-frv__sum .s i{width:17px;height:17px;background:#00b67a;display:inline-flex;align-items:center;justify-content:center;}
+    #bea-frv-{{ section.id }} .bea-frv__sum .s svg{width:13px;height:13px;}
+    #bea-frv-{{ section.id }} .bea-frv__row{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 15px 6px;-webkit-overflow-scrolling:touch;}
+    #bea-frv-{{ section.id }} .bea-frv__row::-webkit-scrollbar{display:none;}
+    #bea-frv-{{ section.id }} .bea-frv__card{flex:0 0 78%;max-width:300px;scroll-snap-align:start;border:1px solid rgba(18,18,18,.12);border-radius:8px;padding:14px;box-sizing:border-box;background:#fff;}
+    #bea-frv-{{ section.id }} .bea-frv__img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;display:block;margin:0 0 10px;background:#fafafa;}
+    #bea-frv-{{ section.id }} .bea-frv__st{display:flex;gap:2px;margin:0 0 8px;}
+    #bea-frv-{{ section.id }} .bea-frv__st svg{width:12px;height:12px;display:block;}
+    #bea-frv-{{ section.id }} .bea-frv__tx{font-size:12px;line-height:1.45;margin:0 0 10px;}
+    #bea-frv-{{ section.id }} .bea-frv__meta{display:flex;align-items:center;gap:6px;font-size:11px;}
+    #bea-frv-{{ section.id }} .bea-frv__nm{font-weight:500;}
+    #bea-frv-{{ section.id }} .bea-frv__vf{color:#218519;}
+    @media (min-width:990px){
+      #bea-frv-{{ section.id }}{max-width:1200px;margin:0 auto;padding-top:56px;}
+      #bea-frv-{{ section.id }} .bea-frv__card{flex-basis:280px;}
+    }
+  </style>
+  <div class="bea-frv__head"><h2 class="bea-frv__t">{{ section.settings.title }}</h2></div>
+  <div class="bea-frv__sum">
+    <span class="s">{%- for i in (1..5) -%}<i><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 3.5l2.12 6.52h6.86l-5.55 4.03 2.12 6.52L12 16.54l-5.55 4.03 2.12-6.52L3.02 10.02h6.86z"/></svg></i>{%- endfor -%}</span>
+    <span>{{ 'bealgnd.reviews.count_label' | t: count: bea_reviews_count }}</span>
+  </div>
+  <div class="bea-frv__row">
+    {%- for i in (1..6) -%}
+      {%- assign k_text = 'r' | append: i | append: '_text' -%}
+      {%- assign txt = mf[k_text] -%}
+      {%- if txt != blank -%}
+        {%- assign k_img = 'r' | append: i | append: '_image' -%}
+        {%- assign k_name = 'r' | append: i | append: '_name' -%}
+        {%- assign k_stars = 'r' | append: i | append: '_stars' -%}
+        {%- assign k_ver = 'r' | append: i | append: '_verified' -%}
+        {%- assign rimg = mf[k_img] -%}
+        {%- assign rname = mf[k_name] -%}
+        {%- assign rstars = mf[k_stars].value | default: 5 | round -%}
+        {%- if rstars < 1 -%}{%- assign rstars = 5 -%}{%- endif -%}
+        <div class="bea-frv__card">
+          {%- if rimg != blank -%}<img class="bea-frv__img" src="{{ rimg | image_url: width: 600 }}" alt="{{ rname | escape }}" loading="lazy" width="300" height="300">{%- endif -%}
+          <div class="bea-frv__st" aria-label="{{ rstars }} / 5">
+            {%- for star in (1..5) -%}<svg viewBox="0 0 24 24" fill="{% if star <= rstars %}#121212{% else %}rgba(18,18,18,.18){% endif %}" aria-hidden="true"><path d="M12 2l2.9 6.2 6.8.8-5 4.7 1.3 6.7L12 17.9 5.9 21.1 7.2 14.4 2.2 9.7l6.8-.8z"/></svg>{%- endfor -%}
+          </div>
+          <p class="bea-frv__tx">{{ txt }}</p>
+          <div class="bea-frv__meta">
+            {%- if rname != blank -%}<span class="bea-frv__nm">{{ rname }}</span>{%- endif -%}
+            {%- if mf[k_ver] -%}<span class="bea-frv__vf">✓ {{ 'bealgnd.accordions.verified' | t }}</span>{%- endif -%}
+          </div>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+  <script>
+  (function(){
+    var target=document.getElementById('bea-frv-{{ section.id }}'); if(!target) return;
+    document.addEventListener('click',function(e){
+      var el=e.target&&e.target.closest&&e.target.closest('.bea-reviews'); if(!el) return;
+      e.preventDefault(); e.stopPropagation();
+      var header=document.querySelector('.section-header, .shopify-section-header-sticky');
+      var off=(header?header.getBoundingClientRect().height:0)+12;
+      window.scrollTo({top:target.getBoundingClientRect().top+window.scrollY-off,behavior:'smooth'});
+    },true);
+  })();
+  </script>
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "BEA · Reseñas (ficha)",
+  "tag": "section",
+  "class": "section bea-ficha-resenas",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "Reviews" }
+  ],
+  "presets": [{ "name": "BEA · Reseñas (ficha)" }]
+}
+{% endschema %}

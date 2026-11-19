@@ -1,0 +1,74 @@
+{%- comment -%}
+  bea-upsell.liquid  ·  BEALGND
+  Tarjeta de upsell (producto complementario) que se elige POR PRODUCTO
+  desde el metafield de referencia:  custom.upsell  (tipo Producto)
+  Se renderiza como BLOQUE desde main-product.liquid:
+      {%- when 'bea_upsell' -%}
+        {%- render 'bea-upsell', block: block, product: product -%}
+  Si el producto no tiene upsell asignado, no muestra nada.
+{%- endcomment -%}
+
+{%- liquid
+  assign s = block.settings
+  assign up = product.metafields.custom.upsell.value
+-%}
+
+{%- if up != blank and up.id != product.id -%}
+  {%- assign uv = up.selected_or_first_available_variant -%}
+  <div id="bea-upsell-{{ block.id }}" style="margin:16px 0;font-family:'Inter',sans-serif;letter-spacing:-.02em;" {{ block.shopify_attributes }}>
+
+    <div style="display:flex;align-items:center;gap:12px;background:#f9f9f9;border-radius:0;padding:10px 12px;">
+      <a href="{{ up.url }}" style="flex:0 0 56px;width:56px;height:56px;border-radius:0;overflow:hidden;background:#fff;display:block;">
+        {%- if up.featured_image -%}
+          <img src="{{ up.featured_image | image_url: width: 160 }}" alt="{{ up.title | escape }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">
+        {%- endif -%}
+      </a>
+      <div style="flex:1 1 auto;min-width:0;">
+        <a href="{{ up.url }}" style="display:block;font-size:13px;font-weight:500;color:#121212;text-decoration:none;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ up.title }}</a>
+        <div style="font-size:13px;font-weight:400;color:#121212;margin-top:2px;">{{ uv.price | money }}</div>
+      </div>
+      <button type="button" class="bea-upsell__add" data-variant="{{ uv.id }}" {% unless uv.available %}disabled{% endunless %} aria-label="Add {{ up.title | escape }}" style="flex:0 0 auto;width:32px;height:32px;border:0;background:transparent;color:#121212;font-size:26px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="1.2" stroke-linecap="square"><path d="M12 2v20"/><path d="M2 12h20"/></svg></button>
+    </div>
+  </div>
+
+  <style>
+    #bea-upsell-{{ block.id }} .bea-upsell__add:hover{opacity:.55;}
+    #bea-upsell-{{ block.id }} .bea-upsell__add[disabled]{opacity:.4;cursor:default;}
+  </style>
+
+  <script>
+  (function () {
+    var root = document.getElementById('bea-upsell-{{ block.id }}');
+    if (!root) return;
+    var btn = root.querySelector('.bea-upsell__add');
+    if (!btn) return;
+
+    function updateCount() {
+      fetch('/cart.js').then(function (r) { return r.json(); }).then(function (c) {
+        document.querySelectorAll('.cart-count-bubble span[aria-hidden="true"]').forEach(function (el) {
+          el.textContent = c.item_count;
+        });
+      }).catch(function () {});
+    }
+
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-variant');
+      if (!id) return;
+      btn.disabled = true;
+      var old = btn.innerHTML;
+      btn.innerHTML = '&#10003;';
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [ { id: Number(id), quantity: 1 } ] })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function () {
+        updateCount();
+        setTimeout(function () { btn.innerHTML = old; btn.disabled = false; }, 1500);
+      })
+      .catch(function () { btn.innerHTML = old; btn.disabled = false; });
+    });
+  })();
+  </script>
+{%- endif -%}

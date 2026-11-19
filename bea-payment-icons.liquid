@@ -1,0 +1,93 @@
+{%- comment -%}
+  bea-payment-icons.liquid · BEALGND
+  Slider de confianza bajo el boton de compra: rota cada 3s entre
+  1) iconos de pago  2) envio  3) devoluciones. Deslizamiento horizontal.
+  Se usa como bloque en main-product.liquid:
+      {%- when 'bea_payments' -%}
+        {%- render 'bea-payment-icons', block: block -%}
+
+  i18n: los textos usan claves bealgnd.trust.* (locales/en.default.json), traducibles en
+  Translate & Adapt > "Contenido del tema predeterminado" (buscar "bealgnd").
+{%- endcomment -%}
+
+<div class="bea-trust" {{ block.shopify_attributes }}>
+  <div class="bea-trust__viewport">
+    <div class="bea-trust__rail">
+
+      {%- comment -%} Slide 1 · Metodos de pago {%- endcomment -%}
+      <div class="bea-trust__slide">
+        {%- if shop.enabled_payment_types.size > 0 -%}
+          {%- assign bea_pay_allowed = 'visa,master,american_express,paypal,apple_pay,shopify_pay,google_pay,klarna' | split: ',' -%}
+          <div class="bea-payments bea-payments--product" role="list" aria-label="{{ 'bealgnd.trust.payment_methods' | t }}">
+            {%- for type in shop.enabled_payment_types -%}
+              {%- if bea_pay_allowed contains type -%}
+                {{ type | payment_type_svg_tag: class: 'bea-payment-icon' }}
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- comment -%} Slide 2 · Envio {%- endcomment -%}
+      <div class="bea-trust__slide">
+        <span class="bea-trust__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+        </span>
+        <span class="bea-trust__tx">{{ 'bealgnd.trust.shipping' | t }}</span>
+      </div>
+
+      {%- comment -%} Slide 3 · Devoluciones {%- endcomment -%}
+      <div class="bea-trust__slide">
+        <span class="bea-trust__ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+        </span>
+        <span class="bea-trust__tx">{{ 'bealgnd.trust.returns' | t }}</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .bea-trust{margin:-12px 0 0;font-family:'Inter',sans-serif;}
+  .bea-trust__viewport{overflow:hidden;width:100%;}
+  .bea-trust__rail{display:flex;width:300%;transition:transform .5s ease;}
+  .bea-trust__slide{flex:0 0 33.3333%;display:flex;align-items:center;justify-content:center;gap:7px;min-height:26px;}
+  .bea-trust__ic{width:16px;height:16px;flex:0 0 auto;color:#121212;display:flex;}
+  .bea-trust__ic svg{width:16px;height:16px;}
+  .bea-trust__tx{font-size:11.5px;letter-spacing:-.02em;color:#121212;white-space:nowrap;}
+  .bea-payments--product{display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;gap:6px;}
+  .bea-payments--product .bea-payment-icon{height:17px;width:auto;}
+</style>
+
+<script>
+(function () {
+  var wrap = document.currentScript && document.currentScript.previousElementSibling;
+  // localizar de forma robusta (por si currentScript no aplica)
+  var trust = document.querySelector('.bea-trust');
+  if (!trust) return;
+  var rail = trust.querySelector('.bea-trust__rail');
+  var slides = trust.querySelectorAll('.bea-trust__slide');
+  if (!rail || slides.length < 2) return;
+
+  var i = 0;
+  var timer = null;
+
+  function go(n) {
+    i = (n + slides.length) % slides.length;
+    rail.style.transform = 'translateX(-' + (i * 33.3333) + '%)';
+  }
+  function start() {
+    stop();
+    timer = setInterval(function () { go(i + 1); }, 3000);
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+  // pausa si la pestana no esta visible (ahorra y evita saltos)
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stop(); else start();
+  });
+
+  start();
+})();
+</script>

@@ -1,0 +1,49 @@
+{%- comment -%}
+  BEALGND · Bloque de reseñas estático (estilo Trustpilot) para debajo del título.
+  Decorativo hasta que se instale una app de reseñas real.
+
+  i18n: la palabra "reviews" usa la clave bealgnd.reviews.count_label (con {{ count }})
+  en locales/en.default.json. Se traduce en Translate & Adapt > "Contenido del tema
+  predeterminado" (buscar "bealgnd"). El NUMERO sale del ajuste/metafield reviews_count.
+{%- endcomment -%}
+
+{%- assign bea_reviews_count = product.metafields.custom.reviews_count | default: '694' -%}
+{%- assign bea_reviews_stars = 5 -%}
+{%- assign bea_reviews_label = 'bealgnd.reviews.count_label' | t: count: bea_reviews_count -%}
+
+<div class="bea-reviews" aria-label="{{ bea_reviews_label }}">
+  <span class="bea-reviews__stars">
+    {%- for i in (1..5) -%}
+      <span class="bea-reviews__star{% if i <= bea_reviews_stars %} is-full{% endif %}">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path fill="#fff" d="M12 3.5l2.12 6.52h6.86l-5.55 4.03 2.12 6.52L12 16.54l-5.55 4.03 2.12-6.52L3.02 10.02h6.86z"/>
+        </svg>
+      </span>
+    {%- endfor -%}
+  </span>
+  <span class="bea-reviews__count">{{ bea_reviews_label }}</span>
+  <svg class="bea-reviews__caret" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+    <path d="M1 1.5L6 6.5L11 1.5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<style>
+  .bea-reviews {
+    display: flex; align-items: center; gap: 8px;
+    margin: 8px 0 0 0;
+    font-family: "Inter", sans-serif;
+  }
+  .bea-reviews__stars { display: inline-flex; gap: 3px; }
+  .bea-reviews__star {
+    width: 17px; height: 17px; border-radius: 0;   /* cuadrado, sin redondeo */
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #dcdce6;                            /* gris de estrella vacía (Trustpilot) */
+  }
+  .bea-reviews__star.is-full { background: #00b67a; }  /* verde Trustpilot */
+  .bea-reviews__star svg { width: 13px; height: 13px; display: block; }
+  .bea-reviews__count {
+    font-size: 12px; font-weight: 400; color: #121212;
+    letter-spacing: -0.03em;
+  }
+  .bea-reviews__caret { width: 11px; height: 8px; }
+</style>

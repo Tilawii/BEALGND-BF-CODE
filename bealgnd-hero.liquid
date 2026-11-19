@@ -1,0 +1,336 @@
+{%- liquid
+  # BEALGND · Black Friday: mismo cálculo que layout/theme.liquid
+  assign bea_bf_end = settings.bf_end | date: '%s' | plus: 0
+  assign bea_bf_now = 'now' | date: '%s' | plus: 0
+  assign bea_bf_live = false
+  if settings.bf_enabled
+    assign bea_bf_live = true
+    if settings.bf_hide_after_end and bea_bf_end > 0 and bea_bf_now >= bea_bf_end
+      assign bea_bf_live = false
+    endif
+  endif
+-%}
+{%- comment -%}
+  BEALGND · Hero (slideshow con barra de progreso)
+{%- endcomment -%}
+
+{%- style -%}
+  .bea-hero { position: relative; display: block; overflow: hidden; }
+  .bea-hero__track {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .bea-hero__track::-webkit-scrollbar { display: none; }
+  .bea-hero__slide {
+    position: relative; flex: 0 0 100%; width: 100%;
+    scroll-snap-align: start; height: var(--hero-h, 580px); overflow: hidden;
+  }
+  .bea-hero__media { position: absolute; inset: 0; background: #1a1a1a; }
+  .bea-hero__img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: var(--hero-img-opacity, 1); }
+  .bea-hero__overlay { position: absolute; inset: 0; background: #000; opacity: var(--hero-overlay, 0.25); }
+  .bea-hero__gradient {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) var(--hero-grad-start, 45%), rgba(0,0,0, var(--hero-grad-opacity, 0.9)) 89%);
+  }
+  .bea-hero__content {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    text-align: center; padding: 0 20px 70px;
+    color: var(--hero-text, #fff);
+  }
+  .bea-hero__eyebrow {
+    color: var(--hero-text, #fff);
+    font-family: var(--font-body-family);
+    font-size: 20px; font-weight: 400 !important;
+    letter-spacing: 0; line-height: 1.2;
+    margin: 0 0 4px;
+  }
+  .bea-hero__title {
+    color: var(--hero-text, #fff);
+    font-family: "Inter", var(--font-heading-family);
+    font-size: 36px; font-weight: 500 !important;
+    letter-spacing: -0.05em; line-height: 1.0;
+    margin: 0 0 18px; text-transform: none;
+  }
+  .bea-hero__links { display: flex; gap: 24px; }
+  .bea-hero__link {
+    color: var(--hero-text, #fff);
+    font-family: var(--font-body-family);
+    font-size: 15px; font-weight: 500 !important;
+    letter-spacing: 0;
+    text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+  }
+  .bea-hero__link:hover { color: var(--hero-text, #fff); }
+  .bea-hero__link::before { content: "\2192\00a0"; }
+
+  /* ----- Barra de progreso ----- */
+  .bea-hero__dots {
+    position: absolute; left: 0; right: 0; bottom: 12px;
+    display: flex; gap: 6px; justify-content: center; padding: 0 12px;
+  }
+  .bea-hero__dot {
+    position: relative; flex: 1 1 auto; max-width: none; height: 2px;
+    border: 0; padding: 0; border-radius: 100px;
+    background: rgba(217,217,217,0.4); cursor: pointer;
+    overflow: hidden;
+  }
+  .bea-hero__dot::after {
+    content: ""; position: absolute; inset: 0;
+    background: #fff; border-radius: 100px;
+    transform: scaleX(0); transform-origin: left center;
+  }
+  .bea-hero__dot[data-state="done"]::after { transform: scaleX(1); }
+  .bea-hero__dot[data-state="active"]::after {
+    transform: scaleX(1);
+    transition: transform var(--hero-speed, 5s) linear;
+  }
+  .bea-hero__dot[data-state="idle"]::after {
+    transform: scaleX(0);
+    transition: none;
+  }
+
+  @media screen and (min-width: 750px) {
+    .bea-hero__slide { height: var(--hero-h-desktop, 720px); }
+    .bea-hero__eyebrow { font-size: 24px; }
+    .bea-hero__title { font-size: 56px; }
+    .bea-hero__link { font-size: 17px; }
+    /* Barras de progreso a ancho completo en escritorio */
+    .bea-hero__dots { gap: 10px; padding: 0 40px; bottom: 20px; }
+    .bea-hero__dot { max-width: none; }
+  }
+{%- endstyle -%}
+
+<bealgnd-hero
+  class="bea-hero"
+  data-speed="{{ section.settings.autoplay_speed }}"
+  style="
+    --hero-h: {{ section.settings.height_mobile }}px;
+    --hero-h-desktop: {{ section.settings.height_desktop }}px;
+    --hero-overlay: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    --hero-img-opacity: {{ section.settings.image_opacity | divided_by: 100.0 }};
+    --hero-grad-opacity: {{ section.settings.gradient_intensity | divided_by: 100.0 }};
+    --hero-grad-start: {{ section.settings.gradient_start }}%;
+    --hero-text: {{ section.settings.text_color }};
+    --hero-speed: {{ section.settings.autoplay_speed }}s;
+  "
+>
+  <div class="bea-hero__track" data-track>
+    {%- for block in section.blocks -%}
+      <div class="bea-hero__slide" data-slide {{ block.shopify_attributes }}>
+        <div class="bea-hero__media">
+          {%- if block.settings.image != blank -%}
+            {{
+              block.settings.image
+              | image_url: width: 2000
+              | image_tag:
+                loading: forloop.first,
+                sizes: '100vw',
+                widths: '360,540,720,900,1200,1600,2000',
+                class: 'bea-hero__img'
+            }}
+          {%- endif -%}
+          <div class="bea-hero__overlay"></div>
+          {%- if section.settings.show_gradient -%}<div class="bea-hero__gradient"></div>{%- endif -%}
+        </div>
+        <div class="bea-hero__content">
+              {%- assign bf_slide = false -%}
+              {%- if bea_bf_live and block.settings.bf_on -%}{%- assign bf_slide = true -%}{%- endif -%}
+              {%- if bf_slide -%}
+                <div data-bea-bf style="display:contents">
+                  {%- if block.settings.bf_countdown -%}
+                    <p class="bea-hero__eyebrow" data-bea-bf-cd-wrap>{{ settings.bf_ends_label | escape }}&nbsp; {% render 'bea-bf-cd', fmt: 'colon' %}</p>
+                  {%- endif -%}
+                  {%- if block.settings.bf_title != blank -%}
+                    <h2 class="bea-hero__title">{{ block.settings.bf_title }}</h2>
+                  {%- endif -%}
+                  {%- if block.settings.bf_link_label != blank -%}
+                    <div class="bea-hero__links">
+                      <a class="bea-hero__link" href="{{ block.settings.bf_link_url | default: '#' }}">{{ block.settings.bf_link_label }}</a>
+                    </div>
+                  {%- endif -%}
+                </div>
+              {%- endif -%}
+              <div style="display:contents"{% if bf_slide %} data-bea-bf-off hidden{% endif %}>
+          {%- if block.settings.eyebrow != blank -%}
+            <p class="bea-hero__eyebrow">{{ block.settings.eyebrow }}</p>
+          {%- endif -%}
+          {%- if block.settings.title != blank -%}
+            <h2 class="bea-hero__title">{{ block.settings.title }}</h2>
+          {%- endif -%}
+          {%- if block.settings.link1_label != blank or block.settings.link2_label != blank -%}
+            <div class="bea-hero__links">
+              {%- if block.settings.link1_label != blank -%}
+                <a class="bea-hero__link" href="{{ block.settings.link1_url | default: '#' }}">{{ block.settings.link1_label }}</a>
+              {%- endif -%}
+              </div>
+              {%- if block.settings.link2_label != blank -%}
+                <a class="bea-hero__link" href="{{ block.settings.link2_url | default: '#' }}">{{ block.settings.link2_label }}</a>
+              {%- endif -%}
+            </div>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+
+  {%- if section.blocks.size > 1 -%}
+    <div class="bea-hero__dots" data-dots>
+      {%- for block in section.blocks -%}
+        <button class="bea-hero__dot" type="button" data-dot data-state="idle" aria-label="Ir al slide {{ forloop.index }}"></button>
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+</bealgnd-hero>
+
+<script>
+  if (!customElements.get('bealgnd-hero')) {
+    customElements.define('bealgnd-hero', class extends HTMLElement {
+      connectedCallback() {
+        this.track = this.querySelector('[data-track]');
+        this.slides = Array.prototype.slice.call(this.querySelectorAll('[data-slide]'));
+        this.dots = Array.prototype.slice.call(this.querySelectorAll('[data-dot]'));
+        this.index = 0;
+        this.speed = (parseInt(this.dataset.speed || '5', 10)) * 1000;
+        this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!this.track || this.slides.length < 2) return;
+
+        var self = this;
+        this.dots.forEach(function (d, i) {
+          d.addEventListener('click', function () { self.userGoTo(i); });
+        });
+        this.track.addEventListener('scroll', function () {
+          clearTimeout(self._st);
+          self._st = setTimeout(function () {
+            var i = Math.round(self.track.scrollLeft / self.track.clientWidth);
+            if (i !== self.index) {
+              self.setActive(i);
+              if (!self.reduce) self.startTimer(); // reinicia el contador → una sola barra
+            }
+          }, 60);
+        }, { passive: true });
+
+        this.setActive(0);
+        if (!this.reduce) this.startTimer();
+
+        // Pausar cuando la pestaña no está visible (evita el desajuste al volver)
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+            self.stopTimer();
+          } else if (!self.reduce) {
+            self.setActive(self.index);
+            self.startTimer();
+          }
+        });
+      }
+
+      paintDots() {
+        var self = this;
+        // 1) Reset TOTAL: todas a idle y cortamos cualquier transición en curso
+        this.dots.forEach(function (d) {
+          d.style.transition = 'none';
+          d.setAttribute('data-state', 'idle');
+        });
+        // forzar reflow para que el reset se aplique de golpe
+        void this.offsetWidth;
+        // 2) Pintar el estado real de cada una
+        this.dots.forEach(function (d, j) {
+          d.style.transition = '';
+          if (j < self.index) {
+            d.setAttribute('data-state', 'done');
+          } else if (j === self.index) {
+            void d.offsetWidth;
+            d.setAttribute('data-state', 'active');
+          }
+        });
+      }
+
+      setActive(i) {
+        this.index = i;
+        this.paintDots();
+      }
+
+      goToScroll(i) {
+        this.track.scrollTo({ left: i * this.track.clientWidth, behavior: 'smooth' });
+      }
+
+      next() {
+        var i = (this.index + 1) % this.slides.length;
+        this.goToScroll(i);
+        this.setActive(i);
+      }
+
+      userGoTo(i) {
+        this.goToScroll(i);
+        this.setActive(i);
+        this.startTimer();
+      }
+
+      startTimer() {
+        var self = this;
+        this.stopTimer();
+        if (this.reduce) return;
+        this._iv = setInterval(function () { self.next(); }, this.speed);
+      }
+      stopTimer() { if (this._iv) { clearInterval(this._iv); this._iv = null; } }
+    });
+  }
+</script>
+
+{% schema %}
+{
+  "name": "BEALGND · Hero",
+  "tag": "section",
+  "class": "bea-hero-section",
+  "settings": [
+    { "type": "header", "content": "Tamaño" },
+    { "type": "range", "id": "height_mobile", "min": 380, "max": 780, "step": 10, "unit": "px", "label": "Altura en móvil", "default": 580 },
+    { "type": "range", "id": "height_desktop", "min": 480, "max": 1000, "step": 10, "unit": "px", "label": "Altura en escritorio", "default": 720 },
+    { "type": "header", "content": "Estilo de imagen" },
+    { "type": "range", "id": "image_opacity", "min": 20, "max": 100, "step": 5, "unit": "%", "label": "Opacidad de la imagen", "default": 100 },
+    { "type": "range", "id": "overlay_opacity", "min": 0, "max": 90, "step": 5, "unit": "%", "label": "Oscurecer imagen", "default": 25 },
+    { "type": "header", "content": "Degradado inferior" },
+    { "type": "checkbox", "id": "show_gradient", "label": "Mostrar degradado inferior", "default": true },
+    { "type": "range", "id": "gradient_intensity", "min": 0, "max": 100, "step": 5, "unit": "%", "label": "Intensidad del degradado", "default": 90 },
+    { "type": "range", "id": "gradient_start", "min": 10, "max": 80, "step": 5, "unit": "%", "label": "Altura del degradado", "info": "Un valor más bajo hace que el degradado suba más.", "default": 45 },
+    { "type": "header", "content": "Texto" },
+    { "type": "color", "id": "text_color", "label": "Color del texto", "default": "#ffffff" },
+    { "type": "header", "content": "Reproducción" },
+    { "type": "range", "id": "autoplay_speed", "min": 3, "max": 10, "step": 1, "unit": "s", "label": "Segundos por slide", "default": 5 }
+  ],
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Imagen" },
+        { "type": "text", "id": "eyebrow", "label": "Texto superior", "default": "FIFTH ANNIVERSARY" },
+        { "type": "text", "id": "title", "label": "Título", "default": "NEW ARRIVALS" },
+        { "type": "header", "content": "Enlace 1" },
+        { "type": "text", "id": "link1_label", "label": "Texto", "default": "SHOP NOW" },
+        { "type": "url", "id": "link1_url", "label": "Enlace" },
+        { "type": "header", "content": "Enlace 2" },
+        { "type": "text", "id": "link2_label", "label": "Texto", "default": "DISCOVER" },
+        { "type": "url", "id": "link2_url", "label": "Enlace" },
+            { "type": "header", "content": "Black Friday" },
+            { "type": "checkbox", "id": "bf_on", "label": "Cambiar este slide en modo Black Friday", "info": "Se activa con el interruptor de Black Friday de los ajustes del tema y vuelve solo al terminar.", "default": false },
+            { "type": "checkbox", "id": "bf_countdown", "label": "Cuenta atrás encima del título", "default": true },
+            { "type": "text", "id": "bf_title", "label": "Título en Black Friday" },
+            { "type": "text", "id": "bf_link_label", "label": "Texto del enlace en Black Friday" },
+            { "type": "url", "id": "bf_link_url", "label": "Enlace en Black Friday" }
+      ]
+    }
+  ],
+  "max_blocks": 6,
+  "presets": [
+    {
+      "name": "BEALGND · Hero",
+      "blocks": [
+        { "type": "slide", "settings": { "eyebrow": "FIFTH ANNIVERSARY", "title": "NEW ARRIVALS", "link1_label": "SHOP NOW", "link2_label": "DISCOVER" } },
+        { "type": "slide", "settings": { "eyebrow": "NEW SEASON", "title": "MONOGRAM BAGS", "link1_label": "SHOP NOW", "link2_label": "DISCOVER" } },
+        { "type": "slide", "settings": { "eyebrow": "JUST DROPPED", "title": "TENNIS BRACELETS", "link1_label": "SHOP NOW", "link2_label": "DISCOVER" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

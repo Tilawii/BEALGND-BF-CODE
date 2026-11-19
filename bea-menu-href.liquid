@@ -1,0 +1,20 @@
+{%- comment -%}
+  Devuelve el enlace de un bloque del menú lateral respetando el idioma activo (/es/, /fr/...).
+  Uso: href="{% render 'bea-menu-href', url: block.settings.link %}"
+{%- endcomment -%}
+{%- liquid
+  assign rr = routes.root_url
+  assign rr_last = rr | slice: -1
+  unless rr_last == '/'
+    assign rr = rr | append: '/'
+  endunless
+  assign href = url | default: '#'
+  assign href_first = href | slice: 0
+  if href_first == '/' and rr != '/'
+    assign href_pre = href | slice: 0, rr.size
+    if href_pre != rr
+      assign href = href | remove_first: '/' | prepend: rr
+    endif
+  endif
+  echo href
+-%}

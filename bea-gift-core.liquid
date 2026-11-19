@@ -1,0 +1,215 @@
+{%- comment -%}
+  bea-gift-core.liquid · BEALGND · "Regalo incluido" (oct 2026)
+  Piezas compartidas por la ficha (bea-bogo) y el carrito (cart-drawer / bea-cart-set):
+  - window.beaMoney(cents): formatea en la moneda activa (toma el formato de un importe de muestra de Liquid).
+  - window.BeaSheet: hoja inferior (bottom sheet) para "Choose your free gift", "Choose color" y el pop-up del 50 % (test B).
+  - Estilos de etiquetas (FREE GIFT / 50% OFF), radio y miniatura con boton de esquina.
+  Se puede renderizar varias veces: el JS se registra una sola vez.
+  i18n: claves bealgnd.gi.* (locales/en.default.json, es.json, fr.json).
+{%- endcomment -%}
+<style>
+  .bea-tag{display:inline-flex;align-items:center;gap:3px;background:#eaf6e7;color:#21851a;border-radius:4px;padding:3px 6px;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.34px;line-height:normal;white-space:nowrap;text-transform:uppercase;}
+  .bea-tag svg{width:10px;height:10px;display:block;flex:0 0 auto;}
+  .bea-thumb{position:relative;flex:0 0 auto;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .bea-thumb__btn::after{content:'';position:absolute;inset:-8px;}
+  .bea-thumb__img{position:absolute;left:0;top:0;width:42px;height:42px;border-radius:6px;background:#f4f4f4;overflow:hidden;display:block;}
+  .bea-thumb__img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .bea-thumb__btn{position:absolute;left:30px;top:30px;width:16px;height:16px;border-radius:8px;background:#121212;box-shadow:0 1px 3px rgba(0,0,0,.18);border:0;padding:0;margin:0;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;appearance:none;}
+  .bea-thumb__btn svg{width:7px;height:4px;display:block;}
+  .bea-radio{flex:0 0 auto;width:16px;height:16px;border-radius:50%;box-sizing:border-box;border:1.5px solid #bfbfbf;background:#fff;}
+  .bea-radio.is-on{border:5px solid #121212;}
+
+  /* ===== Hoja inferior ===== */
+  .bea-sheet{display:none;position:fixed;inset:0;z-index:2147483000;align-items:flex-end;justify-content:center;font-family:'Inter',sans-serif;letter-spacing:normal;color:#121212;}
+  .bea-sheet.is-open{display:flex;}
+  .bea-sheet__overlay{position:absolute;inset:0;background:rgba(18,18,18,.55);display:block !important;}
+  .bea-sheet__box{position:relative;box-sizing:border-box;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;background:#fff;border-radius:16px 16px 0 0;padding:20px 20px calc(26px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;animation:beaSheetUp .3s cubic-bezier(.22,.61,.36,1);}
+  @keyframes beaSheetUp{from{transform:translateY(100%);}to{transform:none;}}
+  @media (min-width:750px){.bea-sheet{align-items:center;}.bea-sheet__box{border-radius:16px;max-width:480px;padding-bottom:24px;animation:beaSheetIn .2s ease;}}
+  @keyframes beaSheetIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+  .bea-sheet__top{display:flex;align-items:center;justify-content:space-between;min-height:16px;}
+  .bea-sheet__title{margin:0;font-size:13px;font-weight:600;line-height:normal;color:#121212;}
+  .bea-sheet__x{flex:0 0 auto;width:14px;height:14px;border:0;background:none;padding:0;margin:0 0 0 auto;cursor:pointer;color:#121212;display:flex;align-items:center;justify-content:center;}
+  .bea-sheet__x svg{width:14px;height:14px;display:block;}
+  .bea-sheet__opt{display:flex;align-items:center;gap:12px;box-sizing:border-box;width:100%;background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit;-webkit-appearance:none;appearance:none;margin:0;}
+  .bea-sheet__opt.is-on{border:1.5px solid #121212;padding:9.5px 11.5px;}
+  .bea-sheet__img{flex:0 0 auto;width:48px;height:48px;border-radius:6px;background:#f4f4f4;overflow:hidden;}
+  .bea-sheet__img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .bea-sheet__txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px;}
+  .bea-sheet__name{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;line-height:normal;color:#121212;white-space:nowrap;}
+  .bea-sheet__name span{overflow:hidden;text-overflow:ellipsis;}
+  .bea-sheet__rec{flex:0 0 auto;background:#121212;color:#fff;border-radius:4px;padding:2px 6px;font-size:8.5px;font-weight:600;line-height:normal;}
+  .bea-sheet__price{display:flex;align-items:center;gap:5px;font-size:10.5px;line-height:normal;}
+  .bea-sheet__price s{color:#8c8c8c;}
+  .bea-sheet__price b{font-weight:500;color:#121212;}
+  .bea-sheet__colors{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;line-height:normal;}
+  .bea-sheet__colors-lab{color:#8c8c8c;}
+  .bea-sheet__colors-name{font-weight:500;color:#121212;}
+  .bea-gsw{width:22px;height:22px;box-sizing:border-box;border-radius:50%;border:1.5px solid transparent;padding:2px;background:none;cursor:pointer;margin:0;flex:0 0 auto;-webkit-appearance:none;appearance:none;}
+  .bea-gsw.is-on{border-color:#121212;}
+  .bea-gsw span{display:block;width:100%;height:100%;border-radius:50%;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(18,18,18,.08);}
+  .bea-sheet__save{width:100%;border:0;border-radius:6px;background:#121212;color:#fff;font-family:inherit;font-size:13px;font-weight:500;line-height:normal;padding:13px 0;cursor:pointer;margin:0;}
+  .bea-sheet__save[disabled]{opacity:.6;cursor:default;}
+  /* Pop-up del 50 % (test B) */
+  .bea-pop__added{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:500;line-height:normal;color:#21851a;}
+  .bea-pop__added svg{width:18px;height:18px;flex:0 0 auto;display:block;}
+  .bea-pop__title{margin:0;font-size:15px;font-weight:600;line-height:normal;color:#121212;}
+  .bea-pop__row{display:flex;align-items:center;gap:12px;background:#f7f7f7;border-radius:10px;padding:10px 12px;}
+  .bea-pop__row .bea-sheet__img{background:#fff;}
+  .bea-pop__add{flex:0 0 auto;border:0;border-radius:5px;background:#121212;color:#fff;font-family:inherit;font-size:11px;font-weight:500;line-height:normal;padding:7px 12px;cursor:pointer;margin:0;}
+  .bea-pop__add[disabled]{cursor:default;}
+  .bea-pop__skip{display:block;width:100%;background:none;border:0;padding:0;margin:0;font-family:inherit;font-size:12px;font-weight:400;line-height:normal;color:#121212;text-decoration:underline;text-underline-offset:2px;text-align:center;cursor:pointer;}
+
+  .bea-half{margin:0 0 14px;padding:12px 14px;border:1px solid #e6e6e6;border-radius:12px;background:#fff}
+  .bea-half__head{display:flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.02em;text-transform:uppercase;color:#121212}
+  .bea-half__head b{font-weight:600}
+  .bea-half__head .bea-tag{margin-left:2px}
+  .bea-half__txt{margin:6px 0 0;font-size:13px;line-height:1.45;color:#595959}
+  .bea-half__txt b{color:#121212;font-weight:600}
+  .bea-half__txt em{color:#218519;font-style:normal;font-weight:600}
+</style>
+<script>
+  (function () {
+    if (window.BeaSheet) return;
+
+    /* ---- Dinero en la moneda activa: se deduce el formato de un importe de muestra ---- */
+    var SAMPLE = {{ 123456 | money | json }};
+    var NUM = SAMPLE.match(/1\D?234(\D)56/);
+    var THOU = '', DEC = ',', TPL = SAMPLE;
+    if (NUM) {
+      var raw = NUM[0];
+      DEC = NUM[1];
+      THOU = raw.length === 8 ? raw.charAt(1) : '';
+      TPL = SAMPLE.replace(raw, '{N}');
+    } else {
+      var n2 = SAMPLE.match(/1\D?234\D?56|123456/);
+      if (n2) TPL = SAMPLE.replace(n2[0], '{N}');
+    }
+    window.beaMoney = function (cents) {
+      cents = Math.round(Number(cents) || 0);
+      var neg = cents < 0; cents = Math.abs(cents);
+      var units = Math.floor(cents / 100).toString();
+      var dec = ('0' + (cents % 100)).slice(-2);
+      var withThou = THOU ? units.replace(/\B(?=(\d{3})+(?!\d))/g, THOU) : units;
+      return (neg ? '-' : '') + TPL.replace('{N}', withThou + DEC + dec);
+    };
+
+    /* Colores sin muestra definida en Shopify: tono aproximado por nombre (EN/ES/FR) */
+    var BEA_COLOR_HEX = { black: '#121212', negro: '#121212', noir: '#121212', green: '#2e6b4a', verde: '#2e6b4a', vert: '#2e6b4a', blue: '#1f3557', navy: '#1f3557', azul: '#1f3557', bleu: '#1f3557', brown: '#7a4a2a', marron: '#7a4a2a', 'marrón': '#7a4a2a', beige: '#e3d5bd', cream: '#efe6d2', white: '#f4f4f4', blanco: '#f4f4f4', blanc: '#f4f4f4', grey: '#9a9a9a', gray: '#9a9a9a', gris: '#9a9a9a', red: '#9b1c1c', rojo: '#9b1c1c', rouge: '#9b1c1c', pink: '#e6a6b8', rosa: '#e6a6b8', rose: '#e6a6b8', burgundy: '#5c1a24', tan: '#b08457', camel: '#b08457' };
+    var ICON_X = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg>';
+    window.BEA_ICON_GIFT = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"><path d="M1.667 3.333h6.666c.23 0 .417.187.417.417v.833c0 .23-.187.417-.417.417H1.667a.417.417 0 0 1-.417-.417V3.75c0-.23.187-.417.417-.417Z"/><path d="M5 3.333V8.75"/><path d="M7.917 5v2.917a.833.833 0 0 1-.834.833H2.917a.833.833 0 0 1-.834-.833V5"/><path d="M3.125 3.333a1.042 1.042 0 0 1 0-2.083C4.583 1.25 5 3.333 5 3.333S5.417 1.25 6.875 1.25a1.042 1.042 0 0 1 0 2.083"/></svg>';
+    window.BEA_ICON_CHEV = '<svg viewBox="0 0 7 4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M.875.8 3.5 3.2 6.125.8"/></svg>';
+    var ICON_CHECK = '<svg viewBox="0 0 18 18" fill="none" stroke="#21851a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5l3.8 3.8L15 5"/></svg>';
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    window.beaEsc = esc;
+
+    var el, box, onCloseCb = null;
+    function ensure() {
+      if (el) return;
+      el = document.createElement('div');
+      el.className = 'bea-sheet';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      el.innerHTML = '<div class="bea-sheet__overlay" data-bea-close></div><div class="bea-sheet__box"></div>';
+      document.body.appendChild(el);
+      box = el.querySelector('.bea-sheet__box');
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('[data-bea-close]')) { e.preventDefault(); close(); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && el.classList.contains('is-open')) close();
+      });
+    }
+    function open(html, opts) {
+      ensure();
+      opts = opts || {};
+      onCloseCb = opts.onClose || null;
+      el.setAttribute('aria-label', opts.label || '');
+      box.innerHTML =
+        '<div class="bea-sheet__top"><p class="bea-sheet__title">' + esc(opts.title || '') + '</p>' +
+        '<button type="button" class="bea-sheet__x" data-bea-close aria-label="' + esc(opts.closeLabel || 'Close') + '">' + ICON_X + '</button></div>' +
+        html;
+      el.classList.add('is-open');
+      document.documentElement.classList.add('bea-sheet-open');
+      return box;
+    }
+    function close() {
+      if (!el || !el.classList.contains('is-open')) return;
+      el.classList.remove('is-open');
+      document.documentElement.classList.remove('bea-sheet-open');
+      var cb = onCloseCb; onCloseCb = null;
+      if (cb) try { cb(); } catch (e) {}
+    }
+
+    /* ---- Selector de producto + color (Choose your free gift / Choose color) ----
+       items: [{pid, title, rec:bool, colors:[{name, sw, img}], variants:[{id, color, img, price, cmp}]}]
+       state: {pid, vid}  ·  t: textos  ·  onSave(item, variant) */
+    function picker(cfg) {
+      var cur = { pid: cfg.pid, vid: cfg.vid };
+      var t = cfg.t;
+      function itemOf(pid) { for (var i = 0; i < cfg.items.length; i++) if (String(cfg.items[i].pid) === String(pid)) return cfg.items[i]; return cfg.items[0]; }
+      function varOf(item, vid) { for (var i = 0; i < item.variants.length; i++) if (String(item.variants[i].id) === String(vid)) return item.variants[i]; return item.variants[0]; }
+      function varByColor(item, color) {
+        for (var i = 0; i < item.variants.length; i++) if ((item.variants[i].color || '').toLowerCase() === (color || '').toLowerCase()) return item.variants[i];
+        return null;
+      }
+      function render() {
+        var item = itemOf(cur.pid), v = varOf(item, cur.vid);
+        var h = '';
+        cfg.items.forEach(function (it) {
+          var on = String(it.pid) === String(item.pid);
+          var iv = on ? v : (varByColor(it, v && v.color) || it.variants[0]);
+          h += '<button type="button" class="bea-sheet__opt' + (on ? ' is-on' : '') + '" data-pid="' + it.pid + '">' +
+            '<span class="bea-sheet__img">' + (iv && iv.img ? '<img src="' + esc(iv.img) + '" alt="">' : '') + '</span>' +
+            '<span class="bea-sheet__txt"><span class="bea-sheet__name"><span>' + esc(it.title) + '</span>' + (it.rec ? '<span class="bea-sheet__rec">' + esc(t.recommended) + '</span>' : '') + '</span>' +
+            '<span class="bea-sheet__price">' + (cfg.priceHtml ? cfg.priceHtml(it, iv) : '') + '</span></span>' +
+            (cfg.items.length > 1 ? '<span class="bea-radio' + (on ? ' is-on' : '') + '"></span>' : '') +
+            '</button>';
+        });
+        var colors = (item.colors || []).filter(function (c) { return varByColor(item, c.name); });
+        if (colors.length > 1 || (colors.length === 1 && colors[0].name)) {
+          h += '<div class="bea-sheet__colors"><span class="bea-sheet__colors-lab">' + esc(t.color) + '</span>';
+          colors.forEach(function (c) {
+            var on = v && (v.color || '').toLowerCase() === c.name.toLowerCase();
+            var hex = c.sw || BEA_COLOR_HEX[(c.name || '').toLowerCase()];
+            var bg = hex ? 'background:' + esc(hex) : (c.img ? 'background-image:url(' + esc(c.img) + ')' : 'background:#ddd');
+            h += '<button type="button" class="bea-gsw' + (on ? ' is-on' : '') + '" data-color="' + esc(c.name) + '" aria-label="' + esc(c.name) + '"><span style="' + bg + '"></span></button>';
+          });
+          h += '<span class="bea-sheet__colors-name">' + esc(v ? v.color : '') + '</span></div>';
+        }
+        h += '<button type="button" class="bea-sheet__save">' + esc(cfg.saveLabel) + '</button>';
+        var b = open(h, { title: cfg.title, label: cfg.title, closeLabel: t.close });
+        b.querySelectorAll('.bea-sheet__opt').forEach(function (o) {
+          o.addEventListener('click', function () {
+            var it = itemOf(o.getAttribute('data-pid'));
+            var keep = varByColor(it, v && v.color) || it.variants[0];
+            cur.pid = it.pid; cur.vid = keep.id; render();
+          });
+        });
+        b.querySelectorAll('.bea-gsw').forEach(function (s) {
+          s.addEventListener('click', function () {
+            var nv = varByColor(item, s.getAttribute('data-color'));
+            if (nv) { cur.vid = nv.id; render(); }
+          });
+        });
+        var save = b.querySelector('.bea-sheet__save');
+        save.addEventListener('click', function () {
+          var it = itemOf(cur.pid), vv = varOf(it, cur.vid);
+          var r = cfg.onSave(it, vv);
+          if (r && typeof r.then === 'function') {
+            save.disabled = true;
+            r.then(function () { close(); }, function () { save.disabled = false; });
+          } else { close(); }
+        });
+      }
+      render();
+    }
+
+    window.BeaSheet = { open: open, close: close, picker: picker, iconCheck: ICON_CHECK };
+  })();
+</script>

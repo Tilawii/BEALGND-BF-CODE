@@ -1,0 +1,221 @@
+{%- comment -%}
+bea-ficha-arriba.liquid · BEALGND · Ficha nueva (nov 2026)
+Parte de arriba de la ficha nueva (Figma «PDP estructura Bellroy»). Se pinta desde un bloque
+"Liquid personalizado" justo después de los iconos de pago:
+  {% render 'bea-ficha-arriba', product: product %}
+NO cambia la lógica de la oferta (bea-bogo / bea-gift-core): solo estilos y detalles alrededor.
+1) Sello de la foto más pequeño («buy 1, get 1 free»), sin tapar el bolso.
+2) Miniaturas debajo de la foto en móvil (respetan el filtro por color de la galería).
+3) Pastilla verde «+ FREE GIFT €X» junto al precio (precio del regalo elegido; solo si hay oferta).
+4) Nombre del color debajo de cada muestra.
+5) Envío · devoluciones · garantía en 3 líneas con icono (el carrusel de abajo del botón deja solo los pagos).
+{%- endcomment -%}
+<div class="bea-fa-trust">
+  <div class="bea-fa-trust__row">{%- render 'bea-icon', key: 'truck' -%}<span>{{ 'bealgnd.trust.shipping' | t }}</span></div>
+  <div class="bea-fa-trust__row">{%- render 'bea-ficha-icon', key: 'devolucion' -%}<span>{{ 'bealgnd.trust.returns' | t }}</span></div>
+  <div class="bea-fa-trust__row">{%- render 'bea-icon', key: 'shield' -%}<span>{{ 'bealgnd.trust.warranty' | t }}</span></div>
+</div>
+
+<style>
+  /* 5 · Envío / devoluciones / garantía */
+  .bea-fa-trust{display:flex;flex-direction:column;gap:10px;margin:14px 0 4px;font-family:'Inter',sans-serif;}
+  .bea-fa-trust__row{display:flex;align-items:center;gap:9px;font-size:11.5px;letter-spacing:-.03em;color:#121212;}
+  .bea-fa-trust__row svg{width:16px;height:16px;flex:0 0 16px;display:block;}
+  /* el carrusel de debajo del botón se queda solo con los iconos de pago */
+  .bea-trust__rail{transform:none !important;}
+  .bea-trust__slide:not(:first-child){display:none !important;}
+
+  /* 1 · Sello pequeño sobre la foto */
+  .bea-seal{padding:7px 11px !important;gap:0 !important;border-radius:8px !important;max-width:none !important;}
+  .bea-seal__img,.bea-seal__t2{display:none !important;}
+  .bea-seal__t1{font-size:11px !important;font-weight:500 !important;letter-spacing:-.01em !important;text-transform:lowercase;}
+  .bea-seal__t1 svg{width:12px !important;height:12px !important;}
+
+  /* 3 · Pastilla «+ FREE GIFT €X» */
+  .bea-fa-price{display:flex !important;align-items:center;gap:8px;flex-wrap:wrap;}
+  .bea-fa-pill{display:inline-flex;align-items:center;padding:3px 7px;border-radius:4px;background:#e6f3e4;color:#218519;
+    font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.01em;line-height:1.2;white-space:nowrap;}
+  .bea-fa-pill[hidden],.bea-fa-amt[hidden],.bea-fa-cmp[hidden]{display:none !important;}
+  .bea-fa-cmp{font-family:'Inter',sans-serif;font-size:13px;font-weight:400;color:#8a8a8a;text-decoration:line-through;line-height:1.2;}
+  body.bea-bf .bea-fa-price .bea-fa-amt{color:var(--bea-bf,#B91C1C);}
+  .bea-fa-amt{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:-.02em;color:#121212;line-height:1.2;}
+
+  /* 4 · Nombre bajo cada color */
+  .bea-fa-sw{display:flex;flex-direction:column;align-items:center;gap:5px;flex:0 0 auto;}
+  .bea-fa-sw__n{font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:-.03em;color:#121212;white-space:nowrap;max-width:76px;overflow:hidden;text-overflow:ellipsis;}
+
+  /* 2 · Miniaturas (solo móvil) */
+  .bea-fa-thumbs{display:none;}
+  @media screen and (max-width:749px){
+    .bea-fa-thumbs{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:12px 15px 2px;}
+    .bea-fa-thumbs::-webkit-scrollbar{display:none;}
+    .bea-gallery-bars.bea-fa-hide{display:none !important;}
+    .bea-fa-th{flex:0 0 68px;width:68px;height:68px;padding:0;border:1px solid transparent;border-radius:6px;background:#fafafa;overflow:hidden;cursor:pointer;}
+    .bea-fa-th img{width:100%;height:100%;object-fit:cover;display:block;}
+    .bea-fa-th.is-active{border-color:#121212;}
+  }
+
+  /* ===== Ordenador (Figma 07): fotos en una columna a sangre + información fija a la derecha ===== */
+  @media screen and (min-width:990px){
+    .shopify-section[id$="__main"] .page-width:has(> .product){max-width:none !important;padding-left:0 !important;padding-right:72px !important;}
+    .shopify-section[id$="__main"] .product.grid{flex-wrap:nowrap !important;column-gap:60px;}
+    .shopify-section[id$="__main"] .product__media-wrapper{width:58.33% !important;max-width:58.33% !important;flex:0 0 58.33% !important;padding:0 !important;}
+    .shopify-section[id$="__main"] .product__info-wrapper{width:auto !important;max-width:none !important;flex:1 1 auto !important;padding-left:0 !important;padding-top:calc(var(--bea-fa-hh,100px) + 24px) !important;}
+    .shopify-section[id$="__main"] .product__info-container{max-width:468px;}
+    /* galería: primera foto grande y el resto en 2 columnas, todas en 4:5 (el formato real de las fotos, sin recortar) */
+    .shopify-section[id$="__main"] media-gallery .product__media-list{display:grid !important;grid-template-columns:1fr 1fr !important;gap:2px !important;margin:0 !important;padding:0 !important;}
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product__media-item{width:auto !important;max-width:none !important;padding:0 !important;margin:0 !important;}
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product__media-item.bea-fa-first{grid-column:1 / -1 !important;}
+    /* la columna de la derecha baja contigo hasta su final y entonces se queda fija */
+    .shopify-section[id$="__main"] .product__info-container{top:var(--bea-fa-top,30px) !important;}
+    /* aire antes de la sección negra */
+    .shopify-section[id$="__main"] .product.grid{padding-bottom:80px !important;margin-bottom:0 !important;}
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product__media-item,
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product__media-item .product__media,
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product__media-item > .media,
+    .shopify-section[id$="__main"] media-gallery .product__media-list .product-media-container.media-type-video{aspect-ratio:4 / 5 !important;}
+    /* sello y «Video» sobre la PRIMERA foto (la galería va apilada) */
+    .product__media-wrapper .bea-seal{top:var(--bea-fa-st,auto) !important;bottom:auto !important;}
+    .product__media-wrapper .bea-video-cta{top:var(--bea-fa-vt,auto) !important;bottom:auto !important;}
+  }
+</style>
+
+<script>
+(function () {
+  if (window.__beaFichaArriba) return; window.__beaFichaArriba = true;
+  var FREE = {{ 'bealgnd.gi.free_gift' | t | json }};
+  var WORTH = {{ 'bealgnd.gi.gift_worth_html' | t | json }};
+  function deb(fn, ms) { var t; return function () { clearTimeout(t); t = setTimeout(fn, ms || 80); }; }
+
+  /* ---------- 3 · Pastilla del regalo junto al precio ---------- */
+  function paintPrice(price, ov) {
+    var src = price.querySelector('.price--on-sale .price-item--sale') || price.querySelector('.price__regular .price-item--regular') || price.querySelector('.price-item');
+    var txt = src ? src.textContent.replace(/\s+[A-Z]{3}\s*$/, '').trim() : ''; if (ov) txt = ov.now;
+    var amt = price.querySelector('.bea-fa-amt');
+    if (!txt) { if (amt) amt.remove(); return; }
+    if (!price.classList.contains('bea-fa-price')) price.classList.add('bea-fa-price');
+    if (!amt) { amt = document.createElement('span'); amt.className = 'bea-fa-amt'; price.insertBefore(amt, price.firstChild); }
+    if (amt.textContent !== txt) amt.textContent = txt;
+    /* BEA · 11 nov: precio anterior tachado al lado (igual que en las tarjetas) */
+    var cmpSrc = price.querySelector('.price--on-sale .price__sale .price-item--regular');
+    var cmpTxt = cmpSrc ? cmpSrc.textContent.replace(/\s+[A-Z]{3}\s*$/, '').trim() : ''; if (ov) cmpTxt = ov.was;
+    var cmp = price.querySelector('.bea-fa-cmp');
+    if (cmpTxt && cmpTxt !== txt) {
+      if (!cmp) { cmp = document.createElement('s'); cmp.className = 'bea-fa-cmp'; amt.insertAdjacentElement('afterend', cmp); }
+      if (cmp.textContent !== cmpTxt) cmp.textContent = cmpTxt;
+      cmp.hidden = false;
+    } else if (cmp) { cmp.hidden = true; }
+  }
+  function paintPill() {
+    var price = document.querySelector('.product__info-container [id^="price-"]');
+    if (!price) return;
+    var O0 = window.BEA_OFFER; paintPrice(price, (O0 && O0.mode === 'half') ? O0 : null);
+    var pill = price.querySelector('.bea-fa-pill');
+    var root = document.querySelector('.bea-gi');
+    var seal = document.querySelector('.bea-seal');
+    var giftS = root ? root.querySelector('.bea-gi__item s') : null;
+    var halfMode = window.BEA_OFFER ? window.BEA_OFFER.mode === 'half' : (seal && /%/.test(seal.textContent || ''));
+    /* producto al 50 % (bolso de viaje en el carrito): el precio lo explica el botón, aquí no se repite */
+    var amtEl = price.querySelector('.bea-fa-amt'); if (amtEl) amtEl.hidden = false; /* BEA · 17 nov: al 50 % se ve el precio a mitad bajo el título */
+    var show = !!(root && root.style.display !== 'none' && giftS && !halfMode);
+    if (!show) { if (pill) pill.hidden = true; return; }
+    if (!price.classList.contains('bea-fa-price')) price.classList.add('bea-fa-price');
+    if (!pill) { pill = document.createElement('span'); pill.className = 'bea-fa-pill'; price.appendChild(pill); }
+    var txt = WORTH.replace('{price}', giftS.textContent.trim());
+    if (pill.textContent !== txt) pill.textContent = txt;
+    pill.hidden = false;
+  }
+
+  /* ---------- 4 · Nombre bajo cada color ---------- */
+  function paintSwatchNames() {
+    document.querySelectorAll('.bea-sw__item').forEach(function (it) {
+      if (it.parentElement && it.parentElement.classList.contains('bea-fa-sw')) return;
+      var name = it.getAttribute('aria-label') || '';
+      var w = document.createElement('div'); w.className = 'bea-fa-sw';
+      it.parentNode.insertBefore(w, it); w.appendChild(it);
+      var n = document.createElement('span'); n.className = 'bea-fa-sw__n'; n.textContent = name; w.appendChild(n);
+    });
+  }
+
+  /* ---------- 2 · Miniaturas en móvil ---------- */
+  var thumbBox = null;
+  function buildThumbs() {
+    var gal = document.querySelector('media-gallery'); if (!gal) return;
+    var list = gal.querySelector('.product__media-list'); if (!list) return;
+    var host = gal.closest('.product__media-wrapper') || gal;
+    var bars = gal.querySelector('.bea-gallery-bars');
+    var slides = Array.prototype.slice.call(list.querySelectorAll('.product__media-item')).filter(function (s) {
+      return s.style.display !== 'none' && !s.hidden && getComputedStyle(s).display !== 'none';
+    });
+    if (slides.length < 2) { if (thumbBox) { thumbBox.remove(); thumbBox = null; } if (bars) bars.classList.remove('bea-fa-hide'); return; }
+    var key = slides.map(function (s) { return s.getAttribute('data-media-id') || ''; }).join('|');
+    if (thumbBox && thumbBox.isConnected && thumbBox.dataset.key === key) return;
+    if (!thumbBox || !thumbBox.isConnected) {
+      /* fuera del contenedor de la foto, para no mover el sello ni el botón Video */
+      thumbBox = document.createElement('div'); thumbBox.className = 'bea-fa-thumbs';
+      host.parentNode.insertBefore(thumbBox, host.nextSibling);
+    }
+    if (bars && !bars.classList.contains('bea-fa-hide')) bars.classList.add('bea-fa-hide');
+    thumbBox.dataset.key = key; thumbBox.innerHTML = '';
+    slides.forEach(function (s, i) {
+      var img = s.querySelector('img');
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'bea-fa-th' + (i === 0 ? ' is-active' : '');
+      b.setAttribute('aria-label', (i + 1) + ' / ' + slides.length);
+      if (img) { var im = document.createElement('img'); im.src = img.currentSrc || img.src; im.alt = ''; im.loading = 'lazy'; b.appendChild(im); }
+      b.addEventListener('click', function () { list.scrollTo({ left: s.offsetLeft - list.offsetLeft, behavior: 'smooth' }); });
+      thumbBox.appendChild(b);
+    });
+    if (!list.dataset.beaFaScroll) {
+      list.dataset.beaFaScroll = '1';
+      list.addEventListener('scroll', deb(function () {
+        if (!thumbBox) return;
+        var vis = Array.prototype.slice.call(list.querySelectorAll('.product__media-item')).filter(function (s) { return getComputedStyle(s).display !== 'none'; });
+        var best = 0, bd = Infinity;
+        vis.forEach(function (s, i) { var d = Math.abs(s.offsetLeft - list.offsetLeft - list.scrollLeft); if (d < bd) { bd = d; best = i; } });
+        Array.prototype.forEach.call(thumbBox.children, function (c, i) { c.classList.toggle('is-active', i === best); });
+      }, 60));
+    }
+  }
+
+  /* ---------- Ordenador: sello y Video en la primera foto ---------- */
+  function placeDesk() {
+    var gal = document.querySelector('media-gallery'); if (!gal) return;
+    var host = gal.closest('.product__media-wrapper') || gal;
+    if (window.innerWidth < 990) { host.style.removeProperty('--bea-fa-st'); host.style.removeProperty('--bea-fa-vt'); gal.querySelectorAll('.bea-fa-first').forEach(function (e) { e.classList.remove('bea-fa-first'); }); return; }
+    var vis = Array.prototype.slice.call(gal.querySelectorAll('.product__media-item')).filter(function (s) { return getComputedStyle(s).display !== 'none'; });
+    var first = vis[0];
+    if (!first) return;
+    vis.forEach(function (s, i) { var want = i === 0; if (s.classList.contains('bea-fa-first') !== want) s.classList.toggle('bea-fa-first', want); });
+    /* columna derecha: si es más alta que la pantalla, se queda fija por abajo (baja contigo hasta su final) */
+    var ic = document.querySelector('.shopify-section[id$="__main"] .product__info-container');
+    if (ic) { var h = ic.offsetHeight, vh = window.innerHeight; var tv = (h + 30 > vh ? Math.round(vh - h - 24) : 30) + 'px'; if (document.documentElement.style.getPropertyValue('--bea-fa-top') !== tv) document.documentElement.style.setProperty('--bea-fa-top', tv); }
+    var hr = host.getBoundingClientRect(), fr = first.getBoundingClientRect();
+    var bottom = fr.bottom - hr.top;
+    var seal = host.querySelector('.bea-seal'), vid = host.querySelector('.bea-video-cta');
+    if (seal) { var st = Math.round(bottom - 24 - seal.offsetHeight) + 'px'; if (host.style.getPropertyValue('--bea-fa-st') !== st) host.style.setProperty('--bea-fa-st', st); }
+    if (vid) { var vt = Math.round(bottom - 24 - vid.offsetHeight) + 'px'; if (host.style.getPropertyValue('--bea-fa-vt') !== vt) host.style.setProperty('--bea-fa-vt', vt); }
+  }
+  function headerH() { var h = document.querySelector('.section-header') || document.querySelector('header'); if (!h) return; var v = Math.round(h.getBoundingClientRect().height) + 'px'; if (document.documentElement.style.getPropertyValue('--bea-fa-hh') !== v) document.documentElement.style.setProperty('--bea-fa-hh', v); }
+  headerH(); window.addEventListener('load', headerH);
+  window.addEventListener('resize', deb(function () { headerH(); placeDesk(); }, 100));
+
+  var all = deb(function () { paintPill(); paintSwatchNames(); buildThumbs(); placeDesk(); }, 60);
+  function start() {
+    all();
+    var info = document.querySelector('.product__info-container') || document.body;
+    new MutationObserver(function () { paintPill(); paintSwatchNames(); all(); }).observe(info, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] }); /* BEA · pastilla y nombres al instante al cambiar de color */
+    var gal = document.querySelector('media-gallery');
+    if (gal) new MutationObserver(deb(buildThumbs, 120)).observe(gal, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+    /* BEA · al cambiar de color Dawn sustituye las fotos: foto grande y miniaturas se recolocan en el mismo instante, antes de pintar
+       (antes iba con retraso y durante ~70 ms se veía la cuadrícula pequeña y luego saltaba a la foto grande) */
+    var galHost = gal && (gal.closest('.product__media-wrapper') || gal);
+    if (galHost) new MutationObserver(function (ms) {
+      for (var k = 0; k < ms.length; k++) { if (ms[k].type === 'childList' && ms[k].target.closest && ms[k].target.closest('.product__media-list')) { buildThumbs(); placeDesk(); return; } }
+    }).observe(galHost, { childList: true, subtree: true });
+    window.addEventListener('load', function () { setTimeout(all, 300); setTimeout(all, 1500); });
+  }
+  (window.BEA_EARLY = window.BEA_EARLY || []).push(function () { paintPill(); paintSwatchNames(); buildThumbs(); placeDesk(); }); /* BEA · montaje antes del primer pintado */
+  document.addEventListener('bea:offer', function () { paintPill(); });
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>

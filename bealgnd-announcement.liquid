@@ -1,0 +1,180 @@
+{%- comment -%}
+  BEALGND · Barra de anuncios (marquee)
+  Sección personalizada para el tema Dawn.
+{%- endcomment -%}
+
+{%- style -%}
+  .bealgnd-announcement--{{ section.id }} {
+    --bea-bg: {{ section.settings.bg_color }};
+    --bea-fg: {{ section.settings.text_color }};
+    --bea-fs: {{ section.settings.font_size }}px;
+    --bea-ls: {{ section.settings.letter_spacing }}px;
+    --bea-gap: {{ section.settings.item_spacing }}px;
+    --bea-pad: {{ section.settings.padding_vertical }}px;
+    --bea-duration: {{ section.settings.speed }}s;
+    background-color: var(--bea-bg);
+    color: var(--bea-fg);
+    overflow: hidden;
+    width: 100%;
+  }
+  .bealgnd-announcement__viewport {
+    overflow: hidden;
+    display: flex;
+    padding-block: var(--bea-pad);
+  }
+  .bealgnd-announcement__track {
+    display: flex;
+    flex-wrap: nowrap;
+    width: max-content;
+    animation: bealgnd-marquee var(--bea-duration) linear infinite;
+    will-change: transform;
+  }
+  .bealgnd-announcement--{{ section.id }}[data-pause-hover="true"] .bealgnd-announcement__viewport:hover .bealgnd-announcement__track {
+    animation-play-state: paused;
+  }
+  .bealgnd-announcement__group {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+  .bealgnd-announcement__item {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding-inline: calc(var(--bea-gap) / 2);
+    font-size: var(--bea-fs);
+    letter-spacing: var(--bea-ls);
+    line-height: 1;
+    {% if section.settings.uppercase %}text-transform: uppercase;{% endif %}
+    font-family: var(--font-body-family);
+    font-weight: var(--font-body-weight);
+  }
+  .bealgnd-announcement__item strong,
+  .bealgnd-announcement__item b {
+    font-weight: 700;
+  }
+  .bealgnd-announcement__item a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .bealgnd-announcement__item a:hover { text-decoration: underline; }
+  .bealgnd-announcement__sep {
+    flex: 0 0 auto;
+    opacity: 0.6;
+    font-size: var(--bea-fs);
+  }
+  @keyframes bealgnd-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(calc(-100% / 6)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bealgnd-announcement--{{ section.id }} .bealgnd-announcement__track {
+      animation: none;
+      width: 100%;
+      justify-content: center;
+    }
+    .bealgnd-announcement--{{ section.id }} .bealgnd-announcement__group[aria-hidden="true"] {
+      display: none;
+    }
+  }
+{%- endstyle -%}
+
+{%- liquid
+  # BEALGND · Black Friday: mismo cálculo que layout/theme.liquid
+  assign bea_bf_end = settings.bf_end | date: '%s' | plus: 0
+  assign bea_bf_now = 'now' | date: '%s' | plus: 0
+  assign bea_bf_live = false
+  if settings.bf_enabled
+    assign bea_bf_live = true
+    if settings.bf_hide_after_end and bea_bf_end > 0 and bea_bf_now >= bea_bf_end
+      assign bea_bf_live = false
+    endif
+  endif
+-%}
+{%- if bea_bf_live and settings.bf_bar -%}
+  <div class="bea-bf-bar" data-bea-bf role="region" aria-label="Black Friday">
+    {%- if settings.bf_bar_link != blank -%}<a href="{{ settings.bf_bar_link }}">{%- endif -%}
+    {%- liquid
+      assign bf_bar_txt = settings.bf_bar_text
+      assign bf_left = bea_bf_end | minus: bea_bf_now
+      if bf_left <= 86400 and settings.bf_bar_text_last != blank
+        assign bf_bar_txt = settings.bf_bar_text_last
+      endif
+    -%}<span data-bea-bf-text data-normal="{{ settings.bf_bar_text | escape }}" data-last="{{ settings.bf_bar_text_last | default: settings.bf_bar_text | escape }}">{{ bf_bar_txt | escape }}</span><span data-bea-bf-cd-wrap><span class="bea-bf-bar__sep">·</span>{{ settings.bf_ends_label | escape }} {% render 'bea-bf-cd', fmt: 'words' %}</span>
+    {%- if settings.bf_bar_link != blank -%}</a>{%- endif -%}
+  </div>
+{%- endif -%}
+{%- if section.blocks.size > 0 -%}
+  <div
+  {% if bea_bf_live and settings.bf_bar %}data-bea-bf-off hidden{% endif %}
+    class="bealgnd-announcement bealgnd-announcement--{{ section.id }}"
+    data-pause-hover="{{ section.settings.pause_on_hover }}"
+    role="region"
+    aria-label="Anuncios"
+  >
+    <div class="bealgnd-announcement__viewport">
+      <div class="bealgnd-announcement__track">
+        {%- for copy in (1..6) -%}
+          <div class="bealgnd-announcement__group"{% if copy == 2 %} aria-hidden="true"{% endif %}>
+            {%- for block in section.blocks -%}
+              <span class="bealgnd-announcement__item" {{ block.shopify_attributes }}>
+                {%- if block.settings.link != blank -%}
+                  <a href="{{ block.settings.link }}">{{ block.settings.text }}</a>
+                {%- else -%}
+                  {{ block.settings.text }}
+                {%- endif -%}
+              </span>
+              {%- if section.settings.separator != blank -%}
+                <span class="bealgnd-announcement__sep" aria-hidden="true">{{ section.settings.separator }}</span>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "BEALGND · Anuncios",
+  "tag": "section",
+  "class": "bealgnd-announcement-section",
+  "settings": [
+    { "type": "header", "content": "Estilo" },
+    { "type": "color", "id": "bg_color", "label": "Color de fondo", "default": "#000000" },
+    { "type": "color", "id": "text_color", "label": "Color del texto", "default": "#ffffff" },
+    { "type": "range", "id": "font_size", "min": 8, "max": 20, "step": 1, "unit": "px", "label": "Tamaño de fuente", "default": 11 },
+    { "type": "range", "id": "letter_spacing", "min": -1, "max": 2, "step": 0.1, "unit": "px", "label": "Espaciado entre letras", "default": -0.3 },
+    { "type": "checkbox", "id": "uppercase", "label": "Mayúsculas", "default": false },
+    { "type": "range", "id": "padding_vertical", "min": 2, "max": 20, "step": 1, "unit": "px", "label": "Altura (padding vertical)", "default": 7 },
+    { "type": "header", "content": "Movimiento" },
+    { "type": "range", "id": "speed", "min": 5, "max": 60, "step": 1, "unit": "s", "label": "Duración del bucle (más = más lento)", "default": 24 },
+    { "type": "checkbox", "id": "pause_on_hover", "label": "Pausar al pasar el ratón", "default": true },
+    { "type": "header", "content": "Separación" },
+    { "type": "range", "id": "item_spacing", "min": 8, "max": 80, "step": 2, "unit": "px", "label": "Espacio entre mensajes", "default": 40 },
+    { "type": "text", "id": "separator", "label": "Separador entre mensajes", "info": "Déjalo vacío para que no aparezca. Ej: • ✦ /", "default": "•" }
+  ],
+  "blocks": [
+    {
+      "type": "message",
+      "name": "Mensaje",
+      "settings": [
+        { "type": "inline_richtext", "id": "text", "label": "Texto", "info": "Puedes poner parte en negrita seleccionándola.", "default": "<strong>Free delivery*</strong> in Spain from 120€" },
+        { "type": "url", "id": "link", "label": "Enlace (opcional)" }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [
+    {
+      "name": "BEALGND · Anuncios",
+      "blocks": [
+        { "type": "message", "settings": { "text": "<strong>Free delivery*</strong> in Spain from 120€" } },
+        { "type": "message", "settings": { "text": "FIFTH ANNIVERSARY — New arrivals out now" } },
+        { "type": "message", "settings": { "text": "Sign up and get <strong>-15%</strong> on your first order" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

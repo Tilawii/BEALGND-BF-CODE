@@ -1,0 +1,357 @@
+{%- comment -%}
+  bea-gift-picker.liquid · BEALGND
+  v6 (Octubre): upsell del cart drawer al 50%.
+  Antes (v5) el banner solo salia si NO habia regalo aplicado (apaño para esquivar el cruce O1/O2).
+  Ya no hace falta: la Shopify Function 'bogo-jerarquia' resuelve el cruce y aplica regalo + upsell juntos.
+  Ahora el banner se muestra si hay una oferta activa en el carrito (producto de compra O1 u O2)
+  y todavia queda algun upsell por anadir. Jerarquia O1>O2 igual que la function (manda el Travel Bag).
+      {%- render 'bea-gift-picker', gift_collection: settings.bea_gift_collection -%}
+{%- endcomment -%}
+
+{%- liquid
+  # ---- Colecciones por oferta (por handle) ----
+  assign o1_buy    = collections['bogo-oferta-1-compra']
+  assign o2_buy    = collections['bogo-oferta-2-compra']
+  assign o1_upsell = collections['bogo-oferta-1-upsell']
+  assign o2_upsell = collections['bogo-oferta-2-upsell']
+
+  # ---- ¿Que productos de COMPRA hay en el carrito? ----
+  assign has_o1_buy = false
+  for it in cart.items
+    for p in o1_buy.products
+      if p.id == it.product.id
+        assign has_o1_buy = true
+        break
+      endif
+    endfor
+  endfor
+
+  assign has_o2_buy = false
+  for it in cart.items
+    for p in o2_buy.products
+      if p.id == it.product.id
+        assign has_o2_buy = true
+        break
+      endif
+    endfor
+  endfor
+
+  # ---- Jerarquia: Oferta 1 manda si hay Travel Bag (igual que la function) ----
+  assign upsell_coll = blank
+  assign offer_active = false
+  if has_o1_buy
+    assign upsell_coll = o1_upsell
+    assign offer_active = true
+  elsif has_o2_buy
+    assign upsell_coll = o2_upsell
+    assign offer_active = true
+  endif
+
+  # ---- ¿Queda algun upsell por anadir (disponible y no en carrito)? ----
+  assign upsell_available = false
+  if offer_active and upsell_coll != blank
+    for gp in upsell_coll.products
+      assign gv = gp.selected_or_first_available_variant
+      if gv.available == false
+        continue
+      endif
+      assign gp_in_cart = false
+      for it in cart.items
+        if it.product.id == gp.id
+          assign gp_in_cart = true
+          break
+        endif
+      endfor
+      unless gp_in_cart
+        assign upsell_available = true
+        break
+      endunless
+    endfor
+  endif
+
+  # ---- Mostrar el carrusel: oferta activa Y queda upsell por anadir ----
+  assign show_upsell = false
+  if offer_active and upsell_available
+    assign show_upsell = true
+  endif
+
+  # ---- Aviso verde "descuento aplicado" (se mantiene) ----
+  assign has_discount = false
+  if cart.total_discount > 0
+    assign has_discount = true
+  endif
+  assign gift_saved = cart.total_discount | money
+-%}
+
+{%- if cart != empty -%}
+  <div class="bea-gift" data-has-discount="{{ has_discount }}">
+
+    {%- if has_discount -%}
+      {%- comment -%} ===== Aviso verde: descuento aplicado ===== {%- endcomment -%}
+      <div class="bea-gift__applied">
+        <span class="bea-gift__check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </span>
+        <span class="bea-gift__applied-txt">{{ 'bealgnd.gift.applied_html' | t: amount: gift_saved }}</span>
+      </div>
+    {%- endif -%}
+
+    {%- comment -%} Carrusel de UPSELLS 50%: oferta activa y queda algun upsell por anadir {%- endcomment -%}
+    {%- if show_upsell -%}
+      <div class="bea-gift__box">
+        <div class="bea-gift__head">
+          <span class="bea-gift__gift-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </span>
+          <span class="bea-gift__title"><b>Add more and get 50% OFF</b></span>
+        </div>
+
+        <div class="bea-gift__track">
+        {%- assign upsell_products = upsell_coll.products | sort: 'best-selling' -%}
+        {%- for gp in upsell_products limit: 20 -%}
+          {%- assign gv = gp.selected_or_first_available_variant -%}
+          {%- if gv.available == false -%}{%- continue -%}{%- endif -%}
+          {%- assign in_cart = false -%}
+          {%- for it in cart.items -%}
+            {%- if it.product.id == gp.id -%}{%- assign in_cart = true -%}{%- break -%}{%- endif -%}
+          {%- endfor -%}
+          {%- if in_cart -%}{%- continue -%}{%- endif -%}
+
+          {%- comment -%} detectar indice de la opcion color (color/colour/colores/couleur) {%- endcomment -%}
+          {%- assign color_idx = 0 -%}
+          {%- for opt in gp.options_with_values -%}
+            {%- assign oname = opt.name | downcase -%}
+            {%- if oname contains 'color' or oname contains 'colour' or oname contains 'colores' or oname contains 'couleur' -%}
+              {%- assign color_idx = forloop.index -%}{%- break -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {%- assign color_idx0 = color_idx | minus: 1 -%}
+
+          {%- comment -%} construir JSON de variantes disponibles (id, color, size, img) {%- endcomment -%}
+          {%- assign vjson_list = '' -%}
+          {%- for v in gp.variants -%}
+            {%- if v.available -%}
+              {%- assign vcolor = '' -%}
+              {%- assign vsize = '' -%}
+              {%- if color_idx > 0 -%}
+                {%- assign vcolor = v.options[color_idx0] -%}
+                {%- for o in gp.options_with_values -%}
+                  {%- unless forloop.index == color_idx -%}{%- assign vsize = v.options[forloop.index0] -%}{%- endunless -%}
+                {%- endfor -%}
+              {%- else -%}
+                {%- unless gp.has_only_default_variant -%}{%- assign vsize = v.title -%}{%- endunless -%}
+              {%- endif -%}
+              {%- assign vimg = '' -%}
+              {%- if v.image -%}
+                {%- assign vimg = v.image | image_url: width: 300 -%}
+              {%- elsif gp.featured_image -%}
+                {%- assign vimg = gp.featured_image | image_url: width: 300 -%}
+              {%- endif -%}
+              {%- capture vj -%}{"id":{{ v.id }},"color":"{{ vcolor | escape }}","size":"{{ vsize | escape }}","img":"{{ vimg }}"}{%- endcapture -%}
+              {%- if vjson_list == '' -%}{%- assign vjson_list = vj -%}{%- else -%}{%- assign vjson_list = vjson_list | append: ',' | append: vj -%}{%- endif -%}
+            {%- endif -%}
+          {%- endfor -%}
+
+          <div class="bea-gift__card">
+            <button type="button" class="bea-gift__imgwrap" data-gift-img aria-label="Add {{ gp.title | escape }} at 50% off">
+              {%- if gp.featured_image -%}
+                <img class="bea-gift__img" src="{{ gp.featured_image | image_url: width: 200 }}" alt="{{ gp.title | escape }}" loading="lazy" width="88" height="88">
+              {%- endif -%}
+            </button>
+            <div class="bea-gift__name" title="{{ gp.title | escape }}">{{ gp.title }}</div>
+            <div class="bea-gift__price">
+              <s>{{ gp.price | money }}</s> <b>50% OFF</b>
+            </div>
+            <button type="button" class="bea-gift__add" data-gift-variant="{{ gv.id }}" data-variants='[{{ vjson_list }}]'>Add</button>
+          </div>
+        {%- endfor -%}
+      </div>
+      </div>
+    {%- endif -%}
+
+  </div>
+
+  {%- comment -%} ===== Pop-up de seleccion (color / talla) ===== {%- endcomment -%}
+  <div class="bea-gift__modal">
+    <div class="bea-gift__modal-overlay" data-gclose></div>
+    <div class="bea-gift__modal-box">
+      <button type="button" class="bea-gift__modal-x" data-gclose aria-label="{{ 'bealgnd.gift.close' | t }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <p class="bea-gift__modal-title" data-gtitle>{{ 'bealgnd.gift.select_color' | t }}</p>
+      <div class="bea-gift__modal-list" data-glist></div>
+    </div>
+  </div>
+{%- endif -%}
+
+<style>
+  .bea-gift{margin:0;padding:0;font-family:'Inter',sans-serif;letter-spacing:-.02em;}
+  .bea-gift__box{background:#f7f7f7;border:0;border-radius:0;box-sizing:border-box;width:calc(100% + 60px);margin:-10px -30px 12px -30px;padding:14px 15px;}
+  .bea-gift__head{display:flex;align-items:center;gap:7px;margin:0 0 10px;}
+  .bea-gift__gift-ic{width:15px;height:15px;flex:0 0 auto;color:#121212;display:flex;}
+  .bea-gift__gift-ic svg{width:15px;height:15px;}
+  .bea-gift__title{font-size:11.5px;line-height:1.3;color:#121212;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bea-gift__title b{font-weight:600;}
+  .bea-gift__track{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 0 2px;}
+  .bea-gift__track::-webkit-scrollbar{display:none;}
+  .bea-gift__card{flex:0 0 205px;width:205px;scroll-snap-align:start;box-sizing:border-box;display:grid;grid-template-columns:50px 1fr;grid-template-rows:auto auto;gap:2px 8px;align-items:center;background:#fff;border-radius:8px;padding:8px;}
+  .bea-gift__imgwrap{grid-row:1 / span 2;display:block;width:50px;height:50px;background:#fafafa;border-radius:6px;overflow:hidden;border:0;padding:0;cursor:pointer;-webkit-appearance:none;appearance:none;}
+  .bea-gift__img{width:100%;height:100%;object-fit:cover;display:block;}
+  .bea-gift__name{margin:0;font-size:10.5px;color:#121212;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bea-gift__price{margin:0;font-size:10.5px;color:#121212;display:flex;align-items:baseline;gap:4px;}
+  .bea-gift__price s{color:rgba(18,18,18,.45);}
+  .bea-gift__price b{font-weight:600;color:#37b72c;}
+  .bea-gift__add{grid-column:1 / -1;width:100%;border:1px solid #121212;background:#fff;color:#121212;font-family:inherit;font-size:10.5px;font-weight:500;letter-spacing:-.02em;padding:5px 0;border-radius:4px;cursor:pointer;transition:background .15s ease,color .15s ease;margin-top:2px;}
+  .bea-gift__add:hover{background:#121212;color:#fff;}
+  .bea-gift__add[data-in-cart="1"]{background:#121212;color:#fff;cursor:default;}
+
+  .bea-gift__applied{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(53,179,74,.08);border:1px solid rgba(53,179,74,.35);border-radius:8px;margin:0 0 12px;}
+  .bea-gift__check{width:18px;height:18px;flex:0 0 auto;color:#2f9e40;display:flex;}
+  .bea-gift__check svg{width:18px;height:18px;}
+  .bea-gift__applied-txt{font-size:12px;color:#121212;line-height:1.3;}
+  .bea-gift__applied-txt b{font-weight:600;}
+
+  /* ===== Pop-up (mismo estilo swatches que la PDP) ===== */
+  .bea-gift__modal{display:none;position:fixed;inset:0;z-index:120;align-items:flex-end;justify-content:center;}
+  .bea-gift__modal.is-open{display:flex;}
+  .bea-gift__modal-overlay{position:absolute;inset:0;background:rgba(18,18,18,.55);}
+  .bea-gift__modal-box{position:relative;background:#fff;border-radius:12px 12px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));max-width:520px;width:100%;box-shadow:0 -8px 40px rgba(0,0,0,.18);animation:beaGiftUp .3s cubic-bezier(.22,.61,.36,1);font-family:'Inter',sans-serif;}
+  @keyframes beaGiftUp{from{transform:translateY(100%);}to{transform:none;}}
+  .bea-gift__modal-x{position:absolute;top:14px;right:14px;width:28px;height:28px;border:0;background:none;cursor:pointer;color:#121212;display:flex;align-items:center;justify-content:center;line-height:0;}
+  .bea-gift__modal-x svg{width:16px;height:16px;}
+  .bea-gift__modal-title{font-family:'Inter',sans-serif;font-size:10.5px;font-weight:500;letter-spacing:-.05em;color:#121212;text-transform:none;margin:0 0 12px;text-align:left;}
+
+  .bea-gift__modal-list{display:flex;flex-wrap:wrap;gap:8px;}
+  .bea-gift__opt{min-width:52px;border:1px solid rgba(18,18,18,.2);background:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:400;letter-spacing:-.03em;color:#121212;padding:11px 14px;border-radius:6px;cursor:pointer;transition:border-color .15s ease;}
+  .bea-gift__opt:hover{border-color:#121212;}
+
+  .bea-gift__modal-list--colors{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+  .bea-gift__modal-list--colors::-webkit-scrollbar{display:none;}
+  .bea-gift__coloropt{box-sizing:border-box;width:70px;flex:0 0 auto;border:0;background:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:'Inter',sans-serif;}
+  .bea-gift__coloropt-img{width:70px;height:70px;border:1px solid transparent;border-radius:6px;background:#fafafa;overflow:hidden;transition:border-color .15s ease;display:block;}
+  .bea-gift__coloropt-img img{width:100%;height:100%;object-fit:contain;display:block;mix-blend-mode:multiply;transform:scale(1.35);transform-origin:center;}
+  .bea-gift__coloropt:hover .bea-gift__coloropt-img{border-color:#121212;}
+  .bea-gift__coloropt-tx{font-size:10.5px;font-weight:400;letter-spacing:-.03em;color:#121212;line-height:1.2;text-align:center;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+</style>
+
+<script>
+(function () {
+  if (window.__beaGiftPickerBound) return;
+  window.__beaGiftPickerBound = true;
+
+  var BEA_GIFT_I18N = {
+    adding: {{ 'bealgnd.gift.adding' | t | json }},
+    selectColor: {{ 'bealgnd.gift.select_color' | t | json }},
+    selectSize: {{ 'bealgnd.gift.select_size' | t | json }},
+    oneSize: {{ 'bealgnd.gift.one_size' | t | json }},
+    dflt: {{ 'bealgnd.gift.default_color' | t | json }}
+  };
+
+  function refresh() {
+    if (typeof window.beaCartRefresh === 'function') return window.beaCartRefresh();
+    return Promise.resolve();
+  }
+
+  function modalEls() {
+    return {
+      modal: document.querySelector('.bea-gift__modal'),
+      title: document.querySelector('.bea-gift__modal [data-gtitle]'),
+      list: document.querySelector('.bea-gift__modal [data-glist]')
+    };
+  }
+  function closeModal() {
+    document.querySelectorAll('.bea-gift__modal').forEach(function (m) { m.classList.remove('is-open'); });
+  }
+
+  function addVariant(id, btn, original) {
+    return fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ items: [{ id: Number(id), quantity: 1 }] })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function () { return refresh(); })
+    .catch(function () { if (btn) { btn.disabled = false; btn.textContent = original; } });
+  }
+
+  function chooseSize(variants, btn, original) {
+    var els = modalEls();
+    els.title.textContent = BEA_GIFT_I18N.selectSize;
+    els.list.classList.remove('bea-gift__modal-list--colors');
+    els.list.innerHTML = '';
+    variants.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'bea-gift__opt';
+      b.textContent = v.size || BEA_GIFT_I18N.oneSize;
+      b.addEventListener('click', function () { closeModal(); addVariant(v.id, btn, original); });
+      els.list.appendChild(b);
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('[data-gclose]')) { closeModal(); return; }
+
+    var imgBtn = e.target && e.target.closest ? e.target.closest('[data-gift-img]') : null;
+    if (imgBtn) {
+      e.preventDefault();
+      var card = imgBtn.closest('.bea-gift__card');
+      var addBtn = card && card.querySelector('.bea-gift__add');
+      if (addBtn && !addBtn.disabled && addBtn.getAttribute('data-in-cart') !== '1') addBtn.click();
+      return;
+    }
+
+    var btn = e.target && e.target.closest ? e.target.closest('.bea-gift__add') : null;
+    if (!btn || btn.disabled || btn.getAttribute('data-in-cart') === '1') return;
+    e.preventDefault();
+
+    var variants = [];
+    try { variants = JSON.parse(btn.getAttribute('data-variants') || '[]'); } catch (_) {}
+    var original = btn.textContent;
+
+    if (variants.length <= 1) {
+      var id = (variants[0] && variants[0].id) || btn.getAttribute('data-gift-variant');
+      if (!id) return;
+      btn.disabled = true; btn.textContent = BEA_GIFT_I18N.adding;
+      addVariant(id, btn, original);
+      return;
+    }
+
+    var els = modalEls();
+    if (!els.modal) return;
+
+    var colors = {};
+    var colorOrder = [];
+    variants.forEach(function (v) {
+      var c = v.color || '';
+      if (!(c in colors)) { colors[c] = []; colorOrder.push(c); }
+      colors[c].push(v);
+    });
+
+    var hasColor = colorOrder.length > 1 || (colorOrder.length === 1 && colorOrder[0] !== '');
+
+    if (hasColor) {
+      els.title.textContent = BEA_GIFT_I18N.selectColor;
+      els.list.classList.add('bea-gift__modal-list--colors');
+      els.list.innerHTML = '';
+      colorOrder.forEach(function (c) {
+        var vs = colors[c];
+        var img = (vs[0] && vs[0].img) || '';
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'bea-gift__coloropt';
+        b.innerHTML =
+          '<span class="bea-gift__coloropt-img">' + (img ? '<img src="' + img + '" alt="" loading="lazy">' : '') + '</span>' +
+          '<span class="bea-gift__coloropt-tx">' + (c || BEA_GIFT_I18N.dflt) + '</span>';
+        b.addEventListener('click', function () {
+          if (vs.length === 1) { closeModal(); btn.disabled = true; btn.textContent = BEA_GIFT_I18N.adding; addVariant(vs[0].id, btn, original); }
+          else { chooseSize(vs, btn, original); }
+        });
+        els.list.appendChild(b);
+      });
+    } else {
+      els.list.classList.remove('bea-gift__modal-list--colors');
+      chooseSize(variants, btn, original);
+    }
+    els.modal.classList.add('is-open');
+  }, true);
+})();
+</script>

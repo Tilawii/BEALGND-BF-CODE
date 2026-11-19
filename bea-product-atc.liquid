@@ -1,0 +1,51 @@
+{%- comment -%}
+  BEALGND · Precio dentro del botón "Add to cart" (a la derecha)
+  Lee el precio del producto y lo añade al botón. Se actualiza al cambiar variante.
+{%- endcomment -%}
+
+<script>
+(function () {
+  function fmtFromPage() {
+    // Coge el precio visible de la página (respeta moneda/formato de Shopify)
+    var priceEl = document.querySelector('.price__regular .price-item--regular') ||
+                  document.querySelector('.price-item--regular') ||
+                  document.querySelector('.price .price-item');
+    return priceEl ? priceEl.textContent.trim() : '';
+  }
+
+  function decorate() {
+// BEA · Regalo incluido: si la ficha tiene oferta, el boton lo pinta bea-bogo.liquid
+if (typeof window.beaAtcDecorate === 'function' && window.beaAtcDecorate() === true) return;
+    var btns = document.querySelectorAll('.bea-tpl-product .product-form__submit');
+    btns.forEach(function (btn) {
+      // texto base "Add to cart" (o "Sold out")
+      var span = btn.querySelector('span:not(.bea-add-price)');
+      var priceTxt = fmtFromPage();
+      var priceEl = btn.querySelector('.bea-add-price');
+      if (!priceEl) {
+        priceEl = document.createElement('span');
+        priceEl.className = 'bea-add-price';
+        btn.appendChild(priceEl);
+      }
+      priceEl.textContent = priceTxt;
+    });
+  }
+
+  function run() {
+    if (!document.body.classList.contains('bea-tpl-product')) return;
+    decorate();
+    // actualizar al cambiar variante (Dawn dispara este evento)
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.closest && e.target.closest('variant-selects, variant-radios, .product-form')) {
+        setTimeout(decorate, 120);
+      }
+    });
+  }
+
+  (window.BEA_EARLY = window.BEA_EARLY || []).push(function () { if (document.body.classList.contains('bea-tpl-product')) decorate(); }); /* BEA · montaje antes del primer pintado */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+  window.addEventListener('load', run);
+  document.addEventListener('shopify:section:load', run);
+})();
+</script>

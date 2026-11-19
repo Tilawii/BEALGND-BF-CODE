@@ -1,0 +1,24 @@
+{%- comment -%}
+  bea-related-card.liquid  ·  BEALGND
+  Una tarjeta de producto para la seccion "You will like also".
+  Uso: {%- render 'bea-related-card', p: p -%}
+{%- endcomment -%}
+{%- assign pv = p.selected_or_first_available_variant -%}
+{%- liquid
+  assign copt = null
+  for o in p.options_with_values
+    assign dn = o.name | downcase
+    if dn contains 'color' or dn contains 'colour'
+      assign copt = o
+    endif
+  endfor
+-%}
+<div class="bea-rel__card" data-handle="{{ p.handle }}">
+  <a href="{{ p.url }}" class="bea-rel__img">
+    {%- if p.featured_image -%}<img src="{{ p.featured_image | image_url: width: 500 }}" alt="{{ p.title | escape }}" loading="lazy">{%- endif -%}
+    <button type="button" class="bea-rel__add" data-variant="{{ pv.id }}" {% unless pv.available %}disabled{% endunless %} aria-label="Add {{ p.title | escape }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="1.2" stroke-linecap="square"><path d="M12 2v20"/><path d="M2 12h20"/></svg></button>
+  </a>
+  <a href="{{ p.url }}" class="bea-rel__name" style="text-decoration:none;">{{ p.title }}</a>
+  {%- if copt -%}<div class="bea-rel__sub">{{ copt.selected_value | default: copt.values.first }} &middot; {{ copt.values.size }} Colors</div>{%- endif -%}
+  <div class="bea-rel__price">{{ p.price | money }}</div>
+</div>

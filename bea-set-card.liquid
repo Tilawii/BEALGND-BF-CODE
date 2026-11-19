@@ -1,0 +1,128 @@
+{%- comment -%}
+  bea-set-card.liquid · BEALGND
+  Genera UNA tarjeta por COLOR de un producto. Params: product, role ('item'|'gift'|'upsell')
+  - Detecta la opcion "color" por nombre (Color/Colour/Colores/Couleur). Si no hay, trata el producto como color unico.
+  - Cada tarjeta lleva embebidas las variantes (tallas) de ese color como JSON en data-variants,
+    para que el JS abra un pop-up de talla si hay mas de una. Cada variante incluye su imagen (img)
+    para que la miniatura de la barra muestre la variante elegida.
+  - data-buy-offers / data-gift-offers / data-up-offers: en que ofertas (1 y/o 2) juega el producto,
+    leido de los MISMOS tags que usa la Function (bogo1-*/bogo2-*). El JS filtra el regalo y el upsell con esto.
+  - i18n: "FREE" usa la clave bealgnd.setbuilder.free (Translate & Adapt > Contenido del tema predeterminado).
+{%- endcomment -%}
+
+{%- liquid
+  comment
+    localizar el indice de la opcion de color (base 0). Incluye 'couleur' para la tienda en frances.
+  endcomment
+  assign color_idx0 = 0
+  assign has_color = false
+  for opt in product.options_with_values
+    assign oname = opt.name | downcase
+    if oname contains 'color' or oname contains 'colour' or oname contains 'colores' or oname contains 'couleur'
+      assign color_idx0 = forloop.index0
+      assign has_color = true
+      break
+    endif
+  endfor
+  assign free_label = 'bealgnd.setbuilder.free' | t
+
+  # roles por oferta: misma fuente que la Function (tags)
+  assign buy_offers = ''
+  if product.tags contains 'bogo1-compra'
+    assign buy_offers = buy_offers | append: '1'
+  endif
+  if product.tags contains 'bogo2-compra'
+    assign buy_offers = buy_offers | append: '2'
+  endif
+  assign gift_offers = ''
+  if product.tags contains 'bogo1-regalo'
+    assign gift_offers = gift_offers | append: '1'
+  endif
+  if product.tags contains 'bogo2-regalo'
+    assign gift_offers = gift_offers | append: '2'
+  endif
+  assign up_offers = ''
+  if product.tags contains 'bogo1-upsell'
+    assign up_offers = up_offers | append: '1'
+  endif
+  if product.tags contains 'bogo2-upsell'
+    assign up_offers = up_offers | append: '2'
+  endif
+-%}
+
+{%- if has_color -%}
+  {%- assign color_option = product.options_with_values[color_idx0] -%}
+  {%- for val in color_option.values -%}
+    {%- comment -%} recopilar variantes disponibles de este color {%- endcomment -%}
+    {%- assign color_variants = '' -%}
+    {%- assign first_variant = null -%}
+    {%- assign color_img = null -%}
+    {%- for v in product.variants -%}
+      {%- assign vcolor = v.options[color_idx0] -%}
+      {%- if vcolor == val and v.available -%}
+        {%- unless first_variant -%}{%- assign first_variant = v -%}{%- assign color_img = v.image -%}{%- endunless -%}
+        {%- comment -%} etiqueta de talla = valor de la primera opcion que NO sea el color {%- endcomment -%}
+        {%- assign size_label = '' -%}
+        {%- if product.options_with_values.size > 1 -%}
+          {%- for o in product.options_with_values -%}
+            {%- unless forloop.index0 == color_idx0 -%}
+              {%- assign size_label = v.options[forloop.index0] -%}
+              {%- break -%}
+            {%- endunless -%}
+          {%- endfor -%}
+        {%- endif -%}
+        {%- comment -%} imagen de la variante (fallback: imagen del color / principal) {%- endcomment -%}
+        {%- assign vimg = '' -%}
+        {%- if v.image -%}
+          {%- assign vimg = v.image | image_url: width: 400 -%}
+        {%- elsif color_img -%}
+          {%- assign vimg = color_img | image_url: width: 400 -%}
+        {%- elsif product.featured_image -%}
+          {%- assign vimg = product.featured_image | image_url: width: 400 -%}
+        {%- endif -%}
+        {%- capture vjson -%}{"id":{{ v.id }},"size":"{{ size_label | escape }}","price":{{ v.price }},"img":"{{ vimg }}"}{%- endcapture -%}
+        {%- if color_variants == '' -%}{%- assign color_variants = vjson -%}{%- else -%}{%- assign color_variants = color_variants | append: ',' | append: vjson -%}{%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if first_variant and color_variants != '' -%}
+      {%- unless color_img -%}{%- assign color_img = product.featured_image -%}{%- endunless -%}
+      <div class="bea-set-card" data-role="{{ role }}" data-product="{{ product.id }}" data-price="{{ first_variant.price }}" data-buy-offers="{{ buy_offers }}" data-gift-offers="{{ gift_offers }}" data-up-offers="{{ up_offers }}" data-variants='[{{ color_variants }}]'>
+        <div class="bea-set-card__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <span class="bea-set-card__imgwrap">{%- if color_img -%}<img class="bea-set-card__img" src="{{ color_img | image_url: width: 400 }}" alt="{{ product.title | escape }} - {{ val | escape }}" loading="lazy">{%- endif -%}</span>
+        <div class="bea-set-card__info">
+          <p class="bea-set-card__name" title="{{ product.title | escape }} · {{ val | escape }}">{{ product.title }} <span class="bea-set-card__variant">· {{ val }}</span></p>
+          <p class="bea-set-card__price">{%- if role == 'gift' -%}<s>{{ first_variant.price | money }}</s> <b>{{ free_label }}</b>{%- elsif role == 'upsell' -%}<s>{{ first_variant.price | money }}</s> <b>−50%</b>{%- else -%}{{ first_variant.price | money }}{%- endif -%}</p>
+        </div>
+      </div>
+    {%- endif -%}
+  {%- endfor -%}
+
+{%- else -%}
+  {%- comment -%} Sin color: una sola tarjeta con todas las variantes (tallas) {%- endcomment -%}
+  {%- assign gv = product.selected_or_first_available_variant -%}
+  {%- assign all_variants = '' -%}
+  {%- for v in product.variants -%}
+    {%- if v.available -%}
+      {%- assign size_label = '' -%}
+      {%- unless product.has_only_default_variant -%}{%- assign size_label = v.title -%}{%- endunless -%}
+      {%- assign vimg = '' -%}
+      {%- if v.image -%}
+        {%- assign vimg = v.image | image_url: width: 400 -%}
+      {%- elsif product.featured_image -%}
+        {%- assign vimg = product.featured_image | image_url: width: 400 -%}
+      {%- endif -%}
+      {%- capture vjson -%}{"id":{{ v.id }},"size":"{{ size_label | escape }}","price":{{ v.price }},"img":"{{ vimg }}"}{%- endcapture -%}
+      {%- if all_variants == '' -%}{%- assign all_variants = vjson -%}{%- else -%}{%- assign all_variants = all_variants | append: ',' | append: vjson -%}{%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if all_variants != '' -%}
+    <div class="bea-set-card" data-role="{{ role }}" data-product="{{ product.id }}" data-price="{{ gv.price }}" data-buy-offers="{{ buy_offers }}" data-gift-offers="{{ gift_offers }}" data-up-offers="{{ up_offers }}" data-variants='[{{ all_variants }}]'>
+      <div class="bea-set-card__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <span class="bea-set-card__imgwrap">{%- if product.featured_image -%}<img class="bea-set-card__img" src="{{ product.featured_image | image_url: width: 400 }}" alt="{{ product.title | escape }}" loading="lazy">{%- endif -%}</span>
+      <div class="bea-set-card__info">
+        <p class="bea-set-card__name" title="{{ product.title | escape }}">{{ product.title }}</p>
+        <p class="bea-set-card__price">{%- if role == 'gift' -%}<s>{{ gv.price | money }}</s> <b>{{ free_label }}</b>{%- elsif role == 'upsell' -%}<s>{{ gv.price | money }}</s> <b>−50%</b>{%- else -%}{{ gv.price | money }}{%- endif -%}</p>
+      </div>
+    </div>
+  {%- endif -%}
+{%- endif -%}

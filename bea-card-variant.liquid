@@ -1,0 +1,207 @@
+{%- comment -%}
+  BEALGND · Tarjeta de VARIANTE (solo para la página de colección)
+  Muestra una variante de color como si fuera una tarjeta de producto propia.
+  Reutiliza las clases de tarjeta del tema para verse igual.
+  Params: card_product, card_variant, media_aspect_ratio, section_id, lazy_load
+  (v2: la palabra Color/Colors se traduce segun idioma: fr Couleur/Couleurs, es Color/Colores)
+{%- endcomment -%}
+{%- liquid
+  assign vimg = card_variant.image | default: card_product.featured_media
+  assign ratio = 1
+  if vimg and media_aspect_ratio == 'portrait'
+    assign ratio = 0.8
+  elsif vimg and media_aspect_ratio == 'adapt'
+    assign ratio = vimg.aspect_ratio
+  endif
+  if ratio == 0 or ratio == null
+    assign ratio = 1
+  endif
+  assign vurl = card_product.url | append: '?variant=' | append: card_variant.id
+  assign color_pos = 0
+  for opt in card_product.options_with_values
+    assign dn = opt.name | downcase | strip
+    if dn contains 'color' or dn contains 'colour' or dn contains 'couleur'
+      assign color_pos = opt.position | minus: 1
+    endif
+  endfor
+  assign vcolor = card_variant.options[color_pos]
+  assign color_count = 1
+  for opt in card_product.options_with_values
+    assign dn = opt.name | downcase | strip
+    if dn contains 'color' or dn contains 'colour' or dn contains 'couleur'
+      assign color_count = opt.values.size
+    endif
+  endfor
+  assign bea_loc = request.locale.iso_code | downcase
+  if bea_loc == 'fr'
+    assign bea_word_one = 'Couleur'
+    assign bea_word_many = 'Couleurs'
+  elsif bea_loc == 'es'
+    assign bea_word_one = 'Color'
+    assign bea_word_many = 'Colores'
+  else
+    assign bea_word_one = 'Color'
+    assign bea_word_many = 'Colors'
+  endif
+-%}
+
+<product-component>
+  <div class="card-wrapper product-card-wrapper underline-links-hover">
+    <div
+      class="card card--{{ settings.card_style }} card--media{% if settings.card_style == 'card' %} color-{{ settings.card_color_scheme }} gradient{% endif %}"
+      style="--ratio-percent: {{ 1 | divided_by: ratio | times: 100 }}%;"
+    >
+      <div
+        class="card__inner {% if settings.card_style == 'standard' %}color-{{ settings.card_color_scheme }} gradient{% endif %} ratio"
+        style="--ratio-percent: {{ 1 | divided_by: ratio | times: 100 }}%;"
+      >
+        {%- comment -%} BEALGND (nov 2026): la tarjeta de variante funciona igual que la de producto: fotos deslizables con linea de progreso + anadido rapido (+). Fotos: la del color + las que lleven #Color en el texto alternativo + las que no lleven etiqueta (galeria por color). {%- endcomment -%}
+        {%- liquid
+          assign bea_tag = '#' | append: vcolor | downcase
+          assign bea_has_tags = false
+          for image in card_product.images
+            assign bea_alt = image.alt | downcase
+            if bea_alt contains '#'
+              assign bea_has_tags = true
+              break
+            endif
+          endfor
+          assign bea_count = 0
+          if vimg
+            assign bea_count = 1
+          endif
+          if bea_has_tags
+            for image in card_product.images
+              if vimg and image.id == vimg.id
+                continue
+              endif
+              assign bea_alt = image.alt | downcase
+              if bea_alt contains '#'
+                unless bea_alt contains bea_tag
+                  continue
+                endunless
+              endif
+              assign bea_count = bea_count | plus: 1
+            endfor
+          endif
+          if bea_count > 10
+            assign bea_count = 10
+          endif
+          assign bea_sizes = '(min-width: 990px) calc(100vw / 4), (min-width: 750px) calc((100vw - 120px) / 3), calc((100vw - 35px) / 2)'
+        -%}
+        <div class="card__media">
+          <bea-card-slider class="bea-cardslider" data-count="{{ bea_count }}">
+            <ul class="bea-cardslider__track list-unstyled" role="list">
+              {%- if vimg -%}
+                <li class="bea-cardslider__slide">
+                  <a href="{{ vurl }}" class="bea-cardslider__link" aria-label="{{ card_product.title | escape }} - {{ vcolor | escape }}">
+                    {%- if lazy_load -%}
+                      {{ vimg | image_url: width: 940 | image_tag: widths: '165, 360, 533, 720, 940', sizes: bea_sizes, loading: 'lazy', class: 'motion-reduce', alt: vimg.alt }}
+                    {%- else -%}
+                      {{ vimg | image_url: width: 940 | image_tag: widths: '165, 360, 533, 720, 940', sizes: bea_sizes, class: 'motion-reduce', alt: vimg.alt }}
+                    {%- endif -%}
+                  </a>
+                </li>
+              {%- endif -%}
+              {%- if bea_has_tags -%}
+                {%- assign bea_n = 1 -%}
+                {%- for image in card_product.images -%}
+                  {%- if vimg and image.id == vimg.id -%}{%- continue -%}{%- endif -%}
+                  {%- assign bea_alt = image.alt | downcase -%}
+                  {%- if bea_alt contains '#' -%}{%- unless bea_alt contains bea_tag -%}{%- continue -%}{%- endunless -%}{%- endif -%}
+                  {%- if bea_n >= 10 -%}{%- break -%}{%- endif -%}
+                  {%- assign bea_n = bea_n | plus: 1 -%}
+                  <li class="bea-cardslider__slide">
+                    <a href="{{ vurl }}" class="bea-cardslider__link" tabindex="-1" aria-hidden="true">
+                      {{ image | image_url: width: 940 | image_tag: widths: '165, 360, 533, 720, 940', sizes: bea_sizes, loading: 'lazy', class: 'motion-reduce', alt: image.alt }}
+                    </a>
+                  </li>
+                {%- endfor -%}
+              {%- endif -%}
+            </ul>
+            {%- if bea_count > 1 -%}
+              <div class="bea-cardslider__indicators" aria-hidden="true">
+                {%- for i in (1..bea_count) -%}<span class="bea-cardslider__indicator{% if forloop.first %} is-active{% endif %}"></span>{%- endfor -%}
+              </div>
+            {%- endif -%}
+          </bea-card-slider>
+          <div class="quick-add no-js-hidden">
+            <modal-opener data-modal="#QuickAdd-{{ card_product.id }}-{{ card_variant.id }}">
+              <button
+                id="quick-add-{{ section_id }}{{ card_variant.id }}-submit"
+                type="submit"
+                name="add"
+                class="quick-add__submit button button--full-width button--secondary"
+                aria-haspopup="dialog"
+                data-product-url="{{ vurl }}"
+              >
+                {{ 'products.product.choose_options' | t }}
+                {%- render 'loading-spinner' -%}
+              </button>
+            </modal-opener>
+            <quick-add-modal id="QuickAdd-{{ card_product.id }}-{{ card_variant.id }}" class="quick-add-modal">
+              <div
+                role="dialog"
+                aria-label="{{ 'products.product.choose_product_options' | t: product_name: card_product.title | escape }}"
+                aria-modal="true"
+                class="quick-add-modal__content global-settings-popup"
+                tabindex="-1"
+              >
+                <button
+                  id="ModalClose-{{ card_product.id }}-{{ card_variant.id }}"
+                  type="button"
+                  class="quick-add-modal__toggle"
+                  aria-label="{{ 'accessibility.close' | t }}"
+                >
+                  {{- 'icon-close.svg' | inline_asset_content -}}
+                </button>
+                <div id="QuickAddInfo-{{ card_product.id }}-{{ card_variant.id }}" class="quick-add-modal__content-info"></div>
+              </div>
+            </quick-add-modal>
+          </div>
+        </div>
+                {%- comment -%} BEALGND (nov 2026) · Etiqueta de descuento automática: sale sola si la variante tiene precio de comparación. Una sola etiqueta; "Agotado" la apaga. {%- endcomment -%}
+            {%- if card_variant.available and card_variant.compare_at_price > card_variant.price -%}
+              {%- assign bea_pct = card_variant.compare_at_price | minus: card_variant.price | times: 100.0 | divided_by: card_variant.compare_at_price | round -%}
+              {%- if bea_pct >= 1 -%}<span class="bea-pct">{%- case request.locale.iso_code -%}{%- when 'es' -%}-{{ bea_pct }}%{%- when 'fr' -%}-{{ bea_pct }} %{%- else -%}{{ bea_pct }}% OFF{%- endcase -%}</span>{%- endif -%}
+            {%- endif -%}
+            <div class="card__badge {{ settings.badge_position }}">
+          {%- if card_variant.available == false -%}
+            <span class="badge badge--bottom-left color-{{ settings.sold_out_badge_color_scheme }}">
+              {{- 'products.product.sold_out' | t -}}
+            </span>
+          {%- endif -%}
+        </div>
+      </div>
+      <div class="card__content">
+        <div class="card__information">
+          <h3 class="card__heading h5">
+            <a href="{{ vurl }}" class="full-unstyled-link">{{ card_product.title | escape }}</a>
+          </h3>
+          <div class="bea-card__subheading">
+            <span class="bea-card__color">{{ vcolor }}</span>
+            <span class="bea-card__count">
+              {{- color_count }} {% if color_count == 1 %}{{ bea_word_one }}{% else %}{{ bea_word_many }}{% endif -%}
+            </span>
+          </div>
+          <div class="card-information">
+            <div class="price{% if card_variant.compare_at_price > card_variant.price %} price--on-sale{% endif %}">
+              <div class="price__container">
+                {%- if card_variant.compare_at_price > card_variant.price -%}
+                  <div class="price__sale">
+                    <s class="price-item price-item--regular">{{ card_variant.compare_at_price | money }}</s>
+                    <span class="price-item price-item--sale price-item--last">{{ card_variant.price | money }}</span>
+                  </div>
+                {%- else -%}
+                  <div class="price__regular">
+                    <span class="price-item price-item--regular">{{ card_variant.price | money }}</span>
+                  </div>
+                {%- endif -%}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</product-component>

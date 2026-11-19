@@ -1,0 +1,512 @@
+{%- liquid
+  # BEALGND · Black Friday: mismo cálculo que layout/theme.liquid
+  assign bea_bf_end = settings.bf_end | date: '%s' | plus: 0
+  assign bea_bf_now = 'now' | date: '%s' | plus: 0
+  assign bea_bf_live = false
+  if settings.bf_enabled
+    assign bea_bf_live = true
+    if settings.bf_hide_after_end and bea_bf_end > 0 and bea_bf_now >= bea_bf_end
+      assign bea_bf_live = false
+    endif
+  endif
+-%}
+{%- comment -%}
+  bealgnd-set-builder.liquid · BEALGND
+  Landing "Build your set" (BOGO) — Hero editorial + flujo wizard (paso a paso)
+  con el regalo presentado como "premio desbloqueado". Optimizada para conversion movil.
+  Lee roles por TAG (bogo1-*/bogo2-*), la misma fuente que la Function. El pool sigue saliendo
+  de las dos colecciones configurables (Nivel 1 y Nivel 2); el tag decide que rol juega cada producto.
+
+  i18n: los textos fijos usan claves bealgnd.setbuilder.* (locales/en.default.json), traducibles en
+  Translate & Adapt > "Contenido del tema predeterminado" (buscar "bealgnd"). Titulo, subtitulo y FAQ son
+  AJUSTES de la seccion: se traducen como contenido de la pagina en T&A (Plantillas), no aqui.
+  Los fetch del carrito (?section_id=...) y la redireccion a /cart usan la raiz localizada.
+{%- endcomment -%}
+
+{%- liquid
+  assign t1 = section.settings.tier1_collection
+  assign t2 = section.settings.tier2_collection
+  assign s = section.settings
+-%}
+
+<div class="bea-set" data-section="{{ section.id }}">
+
+  {%- comment -%} ===== Cabecera minima estilo coleccion ===== {%- endcomment -%}
+  <header class="bea-set__header">
+    <h1 class="bea-set__h1">{{ s.title | default: 'Build your set' }}</h1>
+    {%- if bea_bf_live and settings.bf_bys_pill != blank -%}
+      <div class="bea-set__bf" data-bea-bf><span class="bea-bf-pill">{{ settings.bf_bys_pill | escape }}</span><span data-bea-bf-cd-wrap>{{ settings.bf_pdp_ends | escape }} {% render 'bea-bf-cd', fmt: 'words' %}</span></div>
+    {%- endif -%}
+    {%- if s.subtitle != blank -%}
+      <p class="bea-set__sub">{{ s.subtitle }}</p>
+    {%- endif -%}
+  </header>
+
+  {%- comment -%} Barra de progreso del wizard {%- endcomment -%}
+  <div class="bea-set__wizbar">
+    <div class="bea-set__wizstep is-active" data-wiz="1">
+      <span class="bea-set__wiznum">1</span><span class="bea-set__wizlabel">{{ 'bealgnd.setbuilder.step_item' | t }}</span>
+    </div>
+    <div class="bea-set__wizline"><i></i></div>
+    <div class="bea-set__wizstep" data-wiz="2">
+      <span class="bea-set__wiznum"><svg class="bea-set__gift-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></span><span class="bea-set__wizlabel">{{ 'bealgnd.setbuilder.step_gift' | t }}</span>
+    </div>
+  </div>
+
+  {%- comment -%} ===== PASO 1 · elige tu articulo (solo principales: bogo1-compra / bogo2-compra) ===== {%- endcomment -%}
+  <section class="bea-set__panel is-active" data-panel="1">
+    <p class="bea-set__panel-hint">{{ 'bealgnd.setbuilder.hint_pick' | t }}</p>
+    <div class="bea-set__grid" data-step="item">
+      {%- assign step1_seen = ',' -%}
+      {%- assign t1_sorted = t1.products | sort: 'best-selling' -%}
+      {%- for gp in t1_sorted -%}
+        {%- if gp.available == false -%}{%- continue -%}{%- endif -%}
+        {%- unless gp.tags contains 'bogo1-compra' or gp.tags contains 'bogo2-compra' -%}{%- continue -%}{%- endunless -%}
+        {%- assign step1_seen = step1_seen | append: gp.id | append: ',' -%}
+        {%- render 'bea-set-card', product: gp, role: 'item' -%}
+      {%- endfor -%}
+      {%- assign t2_sorted = t2.products | sort: 'best-selling' -%}
+      {%- for gp in t2_sorted -%}
+        {%- if gp.available == false -%}{%- continue -%}{%- endif -%}
+        {%- unless gp.tags contains 'bogo1-compra' or gp.tags contains 'bogo2-compra' -%}{%- continue -%}{%- endunless -%}
+        {%- assign gp_key = ',' | append: gp.id | append: ',' -%}
+        {%- if step1_seen contains gp_key -%}{%- continue -%}{%- endif -%}
+        {%- render 'bea-set-card', product: gp, role: 'item' -%}
+      {%- endfor -%}
+    </div>
+  </section>
+
+  {%- comment -%} ===== PASO 2 · regalo desbloqueado (solo bogo1-regalo / bogo2-regalo) ===== {%- endcomment -%}
+  <section class="bea-set__panel" data-panel="2">
+    <div class="bea-set__unlock">
+      <span class="bea-set__unlock-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></span>
+      <p class="bea-set__unlock-tx">{{ 'bealgnd.setbuilder.unlock_html' | t }}</p>
+      <button type="button" class="bea-set__back" data-back>{{ 'bealgnd.setbuilder.change_item' | t }}</button>
+    </div>
+    <div class="bea-set__grid" data-step="gift">
+      {%- assign gift_seen = ',' -%}
+      {%- assign t1_gifts = t1.products | sort: 'best-selling' -%}
+      {%- for gp in t1_gifts -%}
+        {%- if gp.available == false -%}{%- continue -%}{%- endif -%}
+        {%- unless gp.tags contains 'bogo1-regalo' or gp.tags contains 'bogo2-regalo' -%}{%- continue -%}{%- endunless -%}
+        {%- assign gift_seen = gift_seen | append: gp.id | append: ',' -%}
+        {%- render 'bea-set-card', product: gp, role: 'gift' -%}
+      {%- endfor -%}
+      {%- assign t2_gifts = t2.products | sort: 'best-selling' -%}
+      {%- for gp in t2_gifts -%}
+        {%- if gp.available == false -%}{%- continue -%}{%- endif -%}
+        {%- unless gp.tags contains 'bogo1-regalo' or gp.tags contains 'bogo2-regalo' -%}{%- continue -%}{%- endunless -%}
+        {%- assign gp_key = ',' | append: gp.id | append: ',' -%}
+        {%- if gift_seen contains gp_key -%}{%- continue -%}{%- endif -%}
+        {%- render 'bea-set-card', product: gp, role: 'gift' -%}
+      {%- endfor -%}
+    </div>
+  </section>
+
+  {%- comment -%} ===== Confianza ===== {%- endcomment -%}
+  <section class="bea-set__trust">
+    <div class="bea-set__trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg><span>{{ 'bealgnd.setbuilder.trust_shipping' | t }}</span></div>
+    <div class="bea-set__trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg><span>{{ 'bealgnd.setbuilder.trust_returns' | t }}</span></div>
+    <div class="bea-set__trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>{{ 'bealgnd.setbuilder.trust_secure' | t }}</span></div>
+  </section>
+
+  {%- comment -%} ===== FAQ ===== {%- endcomment -%}
+  {%- if s.show_faq -%}
+    <section class="bea-set__faq">
+      <h2 class="bea-set__faq-title">{{ s.faq_title | default: 'FAQ' }}</h2>
+      {%- for i in (1..4) -%}
+        {%- assign q_key = 'faq' | append: i | append: '_q' -%}
+        {%- assign a_key = 'faq' | append: i | append: '_a' -%}
+        {%- assign q = s[q_key] -%}
+        {%- assign a = s[a_key] -%}
+        {%- if q != blank -%}
+          <details class="bea-set__faq-item"><summary class="bea-set__faq-q">{{ q }}<span class="bea-set__faq-ic">+</span></summary><div class="bea-set__faq-a">{{ a }}</div></details>
+        {%- endif -%}
+      {%- endfor -%}
+    </section>
+  {%- endif -%}
+
+  {%- comment -%} ===== Pop-up de talla ===== {%- endcomment -%}
+  <div class="bea-set__sizemodal" hidden>
+    <div class="bea-set__sizemodal-overlay" data-close></div>
+    <div class="bea-set__sizemodal-box">
+      <button type="button" class="bea-set__sizemodal-x" data-close aria-label="{{ 'bealgnd.setbuilder.close' | t }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <span class="bea-set__sizemodal-eyebrow">{{ 'bealgnd.setbuilder.size_eyebrow' | t }}</span>
+      <p class="bea-set__sizemodal-title">{{ 'bealgnd.setbuilder.size_title' | t }}</p>
+      <p class="bea-set__sizemodal-prod"></p>
+      <div class="bea-set__sizemodal-list"></div>
+    </div>
+  </div>
+
+  {%- comment -%} ===== Barra sticky ===== {%- endcomment -%}
+  <div class="bea-set__bar" hidden>
+    <div class="bea-set__bar-inner">
+      <div class="bea-set__bar-thumbs">
+        <span class="bea-set__bar-thumb bea-set__bar-thumb--item"></span>
+        <span class="bea-set__bar-plus">+</span>
+        <span class="bea-set__bar-thumb bea-set__bar-thumb--gift"></span>
+      </div>
+      <div class="bea-set__bar-info">
+        <span class="bea-set__bar-line">{{ 'bealgnd.setbuilder.bar_default' | t }}</span>
+        <span class="bea-set__bar-save"></span>
+      </div>
+      <button type="button" class="bea-set__bar-btn" disabled>
+        <span class="bea-set__bar-btn-tx">{{ 'bealgnd.setbuilder.choose_item' | t }}</span>
+        <span class="bea-set__bar-btn-price"></span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .bea-set{max-width:680px;margin:0 auto;padding:0 16px 140px;font-family:'Inter',sans-serif;letter-spacing:-.02em;color:#121212;}
+
+  /* ===== Cabecera minima estilo coleccion ===== */
+  .bea-set__header{padding:30px 0 6px;text-align:center;}
+  .bea-set__h1{font-size:24px;font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 7px;}
+  .bea-set__sub{font-size:12px;line-height:1.5;margin:0 auto;color:rgba(18,18,18,.55);font-weight:400;max-width:290px;}
+
+  /* ===== Wizard bar ===== */
+  .bea-set__wizbar{display:flex;align-items:center;justify-content:center;gap:0;margin:16px 0 22px;}
+  .bea-set__wizstep{display:flex;align-items:center;gap:7px;opacity:.4;transition:opacity .3s ease;}
+  .bea-set__wizstep.is-active,.bea-set__wizstep.is-done{opacity:1;}
+  .bea-set__wiznum{width:24px;height:24px;border-radius:50%;background:#121212;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+  .bea-set__gift-svg{width:13px;height:13px;}
+  .bea-set__wizstep.is-done .bea-set__wiznum{background:#2f9e40;}
+  .bea-set__wizlabel{font-size:12px;font-weight:500;}
+  .bea-set__wizline{width:44px;height:1.5px;background:rgba(18,18,18,.15);margin:0 12px;position:relative;overflow:hidden;}
+  .bea-set__wizline i{position:absolute;left:0;top:0;height:100%;width:0;background:#2f9e40;transition:width .4s ease;}
+  .bea-set__wizbar.step2 .bea-set__wizline i{width:100%;}
+
+  /* ===== Paneles (wizard) ===== */
+  .bea-set__panel{display:none;}
+  .bea-set__panel.is-active{display:block;animation:beaFade .35s ease;}
+  @keyframes beaFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .bea-set__panel-hint{text-align:center;font-size:12.5px;color:rgba(18,18,18,.6);margin:0 0 18px;}
+
+  /* Unlock (paso 2) - compacto horizontal */
+  .bea-set__unlock{display:flex;align-items:center;gap:10px;background:rgba(53,179,74,.07);border:1px solid rgba(53,179,74,.25);border-radius:10px;padding:11px 14px;margin:0 0 18px;}
+  .bea-set__unlock-ic{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;color:#2f9e40;flex:0 0 auto;}
+  .bea-set__unlock-ic svg{width:20px;height:20px;}
+  .bea-set__unlock-tx{flex:1 1 auto;font-size:13px;color:#121212;margin:0;line-height:1.3;}
+  .bea-set__unlock-tx b{font-weight:600;}
+  .bea-set__back{flex:0 0 auto;background:none;border:0;font-family:inherit;font-size:11px;color:rgba(18,18,18,.5);cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:0;white-space:nowrap;}
+
+  .bea-set__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+
+  /* Tarjeta */
+  .bea-set-card{border:1.5px solid rgba(18,18,18,.10);border-radius:12px;overflow:hidden;cursor:pointer;background:#fff;transition:border-color .15s ease,transform .12s ease,box-shadow .15s ease;position:relative;}
+  .bea-set-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06);}
+  .bea-set-card.is-selected{border-color:#121212;box-shadow:0 0 0 1px #121212;}
+  .bea-set-card__imgwrap{width:100%;aspect-ratio:1/1;background:#fafafa;overflow:hidden;display:block;}
+  .bea-set-card__img{width:100%;height:100%;object-fit:cover;display:block;}
+  .bea-set-card__info{padding:10px 11px 12px;}
+  .bea-set-card__name{font-size:12px;line-height:1.25;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bea-set-card__variant{color:rgba(18,18,18,.5);font-weight:400;}
+
+  /* ===== Pop-up de talla ===== */
+  .bea-set__sizemodal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;}
+  .bea-set__sizemodal[hidden]{display:none !important;}
+  .bea-set__sizemodal-overlay{position:absolute;inset:0;background:rgba(18,18,18,.5);animation:beaOverlay .25s ease;}
+  @keyframes beaOverlay{from{opacity:0;}to{opacity:1;}}
+  .bea-set__sizemodal-box{position:relative;background:#fff;border-radius:20px 20px 0 0;padding:26px 22px calc(26px + env(safe-area-inset-bottom));max-width:680px;width:100%;box-shadow:0 -10px 40px rgba(0,0,0,.18);animation:beaSlideUp .3s cubic-bezier(.22,.61,.36,1);}
+  @keyframes beaSlideUp{from{transform:translateY(100%);}to{transform:none;}}
+  .bea-set__sizemodal-box::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:38px;height:4px;background:rgba(18,18,18,.15);border-radius:99px;}
+  .bea-set__sizemodal-x{position:absolute;top:16px;right:16px;width:30px;height:30px;border:0;background:rgba(18,18,18,.05);border-radius:50%;cursor:pointer;color:rgba(18,18,18,.6);display:flex;align-items:center;justify-content:center;transition:background .12s ease;}
+  .bea-set__sizemodal-x:hover{background:rgba(18,18,18,.1);}
+  .bea-set__sizemodal-x svg{width:16px;height:16px;}
+  .bea-set__sizemodal-eyebrow{display:block;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#2f9e40;margin:8px 0 6px;}
+  .bea-set__sizemodal-title{font-size:19px;font-weight:600;letter-spacing:-.03em;margin:0 0 3px;}
+  .bea-set__sizemodal-prod{font-size:12.5px;color:rgba(18,18,18,.55);margin:0 0 18px;}
+  .bea-set__sizemodal-list{display:flex;gap:8px;}
+  .bea-set__sizeopt{flex:1 1 0;min-width:0;border:1px solid rgba(18,18,18,.16);background:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:#121212;padding:0;height:52px;border-radius:8px;cursor:pointer;transition:all .14s ease;letter-spacing:.01em;display:flex;align-items:center;justify-content:center;}
+  .bea-set__sizeopt:hover{border-color:#121212;background:#121212;color:#fff;}
+  .bea-set-card__price{font-size:12px;}
+  .bea-set-card__price s{color:rgba(18,18,18,.45);margin-right:4px;}
+  .bea-set-card__price b{font-weight:600;color:#2f9e40;}
+  .bea-set-card__check{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:50%;background:#121212;color:#fff;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+  .bea-set-card.is-selected .bea-set-card__check{display:flex;}
+  .bea-set-card__check svg{width:13px;height:13px;}
+
+  /* ===== Confianza / FAQ ===== */
+  .bea-set__trust{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;padding:26px 0 22px;border-top:1px solid rgba(18,18,18,.08);margin:26px 0 0;}
+  .bea-set__trust-item{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(18,18,18,.75);}
+  .bea-set__trust-item svg{width:16px;height:16px;flex:0 0 auto;}
+  .bea-set__faq{margin:16px 0 0;border-top:1px solid rgba(18,18,18,.08);padding:22px 0 0;}
+  .bea-set__faq-title{font-size:14px;font-weight:600;text-transform:uppercase;margin:0 0 12px;}
+  .bea-set__faq-item{border-bottom:1px solid rgba(18,18,18,.08);}
+  .bea-set__faq-q{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none;padding:14px 0;font-size:12.5px;font-weight:500;color:#121212;}
+  .bea-set__faq-q::-webkit-details-marker{display:none;}
+  .bea-set__faq-ic{font-size:17px;font-weight:400;color:rgba(18,18,18,.5);transition:transform .2s ease;flex:0 0 auto;}
+  .bea-set__faq-item[open] .bea-set__faq-ic{transform:rotate(45deg);}
+  .bea-set__faq-a{font-size:12px;line-height:1.55;color:rgba(18,18,18,.7);padding:0 0 15px;}
+
+  /* ===== Barra sticky ===== */
+  .bea-set__bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid rgba(18,18,18,.10);box-shadow:0 -4px 24px rgba(0,0,0,.08);padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:'Inter',sans-serif;}
+  .bea-set__bar-inner{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px;}
+  .bea-set__bar-thumbs{display:flex;align-items:center;gap:4px;flex:0 0 auto;}
+  .bea-set__bar-thumb{width:38px;height:38px;border-radius:7px;background:#f2f2f2;background-size:cover;background-position:center;border:1px solid rgba(18,18,18,.08);}
+  .bea-set__bar-plus{font-size:13px;color:rgba(18,18,18,.4);}
+  .bea-set__bar-info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .bea-set__bar-line{font-size:12px;color:#121212;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+  .bea-set__bar-save{font-size:11px;font-weight:600;color:#2f9e40;line-height:1;display:flex;align-items:center;gap:4px;}
+  .bea-set__save-ic{width:13px;height:13px;flex:0 0 auto;}
+  .bea-set__bar-btn{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:0;background:#121212;color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;letter-spacing:-.02em;padding:14px 22px;border-radius:9px;cursor:pointer;transition:opacity .15s ease;}
+  .bea-set__bar-btn:disabled{opacity:.3;cursor:default;}
+  .bea-set__bar-btn-price{font-weight:700;}
+
+  @media (max-width:420px){
+    .bea-set__bar-thumbs{display:none;}
+    .bea-set__h1{font-size:30px;}
+  }
+</style>
+
+<script>
+(function () {
+  var root = document.querySelector('.bea-set[data-section="{{ section.id }}"]');
+  if (!root) return;
+
+  /* Raiz localizada ("/" en ingles, "/fr/" en frances...) y URL del carrito en el idioma activo */
+  var beaRoot = {{ routes.root_url | json }};
+  if (beaRoot.charAt(beaRoot.length - 1) !== '/') beaRoot += '/';
+  var cartUrl = {{ routes.cart_url | json }};
+
+  /* Textos i18n (bealgnd.setbuilder.*) resueltos por el filtro | t. you_save lleva un marcador __AMT__ que se sustituye por el importe.
+     dec(): Shopify escapa los apostrofes de las traducciones (l' -> l&#39;); al usarlos con textContent hay que decodificarlos. */
+  function dec(s) { var ta = document.createElement('textarea'); ta.innerHTML = s; return ta.value; }
+  var I18N = {
+    oneSize: dec({{ 'bealgnd.setbuilder.one_size' | t | json }}),
+    youSave: dec({{ 'bealgnd.setbuilder.you_save' | t: amount: '__AMT__' | json }}),
+    addSet: dec({{ 'bealgnd.setbuilder.add_set' | t | json }}),
+    barDefault: dec({{ 'bealgnd.setbuilder.bar_default' | t | json }}),
+    barPickGift: dec({{ 'bealgnd.setbuilder.bar_pick_gift' | t | json }}),
+    chooseItem: dec({{ 'bealgnd.setbuilder.choose_item' | t | json }}),
+    chooseGift: dec({{ 'bealgnd.setbuilder.choose_gift' | t | json }}),
+    adding: dec({{ 'bealgnd.setbuilder.adding' | t | json }})
+  };
+
+  var bar = root.querySelector('.bea-set__bar');
+  var barLine = root.querySelector('.bea-set__bar-line');
+  var barSave = root.querySelector('.bea-set__bar-save');
+  var barBtn = root.querySelector('.bea-set__bar-btn');
+  var barBtnTx = root.querySelector('.bea-set__bar-btn-tx');
+  var barBtnPrice = root.querySelector('.bea-set__bar-btn-price');
+  var thumbItem = root.querySelector('.bea-set__bar-thumb--item');
+  var thumbGift = root.querySelector('.bea-set__bar-thumb--gift');
+
+  var wizbar = root.querySelector('.bea-set__wizbar');
+  var wizStep1 = root.querySelector('.bea-set__wizstep[data-wiz="1"]');
+  var wizStep2 = root.querySelector('.bea-set__wizstep[data-wiz="2"]');
+  var panel1 = root.querySelector('.bea-set__panel[data-panel="1"]');
+  var panel2 = root.querySelector('.bea-set__panel[data-panel="2"]');
+  var backBtn = root.querySelector('[data-back]');
+
+  var sel = { item: null, gift: null };
+  var activeOffer = null;
+  var giftGrid = root.querySelector('.bea-set__grid[data-step="gift"]');
+
+  // Oferta activa segun el principal: Travel Bag (bogo1-compra) -> O1; resto -> O2.
+  // Misma prioridad que la Function (O1 solo se activa con un bogo1-compra en el carrito).
+  function offerOf(card) {
+    var b = card.getAttribute('data-buy-offers') || '';
+    return b.indexOf('1') !== -1 ? '1' : '2';
+  }
+
+  // Muestra en el paso 2 solo los regalos validos para la oferta activa.
+  function filterGifts() {
+    if (!giftGrid) return;
+    giftGrid.querySelectorAll('.bea-set-card').forEach(function (c) {
+      var g = c.getAttribute('data-gift-offers') || '';
+      var ok = activeOffer && g.indexOf(activeOffer) !== -1;
+      c.style.display = ok ? '' : 'none';
+      if (!ok && c.classList.contains('is-selected')) {
+        c.classList.remove('is-selected');
+        sel.gift = null;
+      }
+    });
+  }
+
+  function money(cents) {
+    return '€' + (cents / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function goStep(n) {
+    if (n === 2) {
+      panel1.classList.remove('is-active');
+      panel2.classList.add('is-active');
+      wizStep1.classList.add('is-done'); wizStep1.classList.remove('is-active');
+      wizStep2.classList.add('is-active');
+      wizbar.classList.add('step2');
+      window.scrollTo({ top: root.offsetTop, behavior: 'smooth' });
+    } else {
+      panel2.classList.remove('is-active');
+      panel1.classList.add('is-active');
+      wizStep1.classList.add('is-active'); wizStep1.classList.remove('is-done');
+      wizStep2.classList.remove('is-active');
+      wizbar.classList.remove('step2');
+      window.scrollTo({ top: root.offsetTop, behavior: 'smooth' });
+    }
+  }
+
+  var sizeModal = root.querySelector('.bea-set__sizemodal');
+  var sizeList = root.querySelector('.bea-set__sizemodal-list');
+  var pendingCard = null, pendingStep = null;
+
+  function closeSizeModal() { if (sizeModal) sizeModal.hidden = true; pendingCard = null; pendingStep = null; }
+  if (sizeModal) sizeModal.querySelectorAll('[data-close]').forEach(function(el){ el.addEventListener('click', closeSizeModal); });
+
+  function selectVariant(card, step, variant) {
+    var grid = card.closest('.bea-set__grid');
+    grid.querySelectorAll('.bea-set-card').forEach(function (c) { c.classList.remove('is-selected'); });
+    card.classList.add('is-selected');
+    var img = card.querySelector('.bea-set-card__img');
+    /* Miniatura: preferimos la foto de la VARIANTE elegida (color); si la tarjeta no la trae, la foto principal */
+    var thumb = (variant && variant.img) ? variant.img : (img ? img.getAttribute('src') : '');
+    sel[step] = {
+      variant: variant.id,
+      product: card.getAttribute('data-product'),
+      name: (card.querySelector('.bea-set-card__name') || {}).textContent || '',
+      price: variant.price,
+      img: thumb
+    };
+    if (step === 'item') {
+      activeOffer = offerOf(card);
+      filterGifts();
+    }
+    updateBar();
+    if (step === 'item') { setTimeout(function(){ goStep(2); }, 260); }
+  }
+
+  root.querySelectorAll('.bea-set__grid').forEach(function (grid) {
+    grid.addEventListener('click', function (e) {
+      var card = e.target.closest('.bea-set-card');
+      if (!card) return;
+      var step = grid.getAttribute('data-step');
+      var variants = [];
+      try { variants = JSON.parse(card.getAttribute('data-variants') || '[]'); } catch(_) {}
+
+      if (variants.length <= 1) {
+        var only = variants[0] || { id: card.getAttribute('data-variant'), price: parseInt(card.getAttribute('data-price')||'0',10) };
+        selectVariant(card, step, only);
+        return;
+      }
+      // hay tallas -> pop-up
+      pendingCard = card; pendingStep = step;
+      var prodEl = root.querySelector('.bea-set__sizemodal-prod');
+      if (prodEl) {
+        var nm = card.querySelector('.bea-set-card__name');
+        prodEl.textContent = nm ? nm.textContent : '';
+      }
+      sizeList.innerHTML = '';
+      variants.forEach(function (v) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'bea-set__sizeopt';
+        b.textContent = v.size || I18N.oneSize;
+        b.addEventListener('click', function () { selectVariant(pendingCard, pendingStep, v); closeSizeModal(); });
+        sizeList.appendChild(b);
+      });
+      sizeModal.hidden = false;
+    });
+  });
+
+  if (backBtn) backBtn.addEventListener('click', function(){ goStep(1); });
+
+  function updateBar() {
+    if (bar) bar.hidden = false;
+    if (thumbItem) thumbItem.style.backgroundImage = sel.item && sel.item.img ? 'url(' + sel.item.img + ')' : '';
+    if (thumbGift) thumbGift.style.backgroundImage = sel.gift && sel.gift.img ? 'url(' + sel.gift.img + ')' : '';
+
+    if (sel.item && sel.gift) {
+      barLine.textContent = sel.item.name + ' + ' + sel.gift.name;
+      barSave.innerHTML = '<svg class="bea-set__save-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>' + I18N.youSave.replace('__AMT__', money(sel.gift.price));
+      barBtnTx.textContent = I18N.addSet;
+      barBtnPrice.textContent = money(sel.item.price);
+      barBtn.disabled = false;
+    } else {
+      barLine.textContent = I18N.barDefault;
+      barSave.textContent = sel.item ? I18N.barPickGift : '';
+      barBtnTx.textContent = !sel.item ? I18N.chooseItem : I18N.chooseGift;
+      barBtnPrice.textContent = '';
+      barBtn.disabled = true;
+    }
+  }
+
+  if (barBtn) {
+    barBtn.addEventListener('click', function () {
+      if (barBtn.disabled || !sel.item || !sel.gift) return;
+      var original = barBtnTx.textContent;
+      barBtn.disabled = true; barBtnTx.textContent = I18N.adding;
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ items: [
+          { id: Number(sel.item.variant), quantity: 1 },
+          { id: Number(sel.gift.variant), quantity: 1 }
+        ] })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function () {
+        return fetch(beaRoot + 'cart?section_id=cart-drawer')
+          .then(function (res) { return res.text(); })
+          .then(function (html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var newDrawer = doc.querySelector('cart-drawer');
+            var curDrawer = document.querySelector('cart-drawer');
+            if (newDrawer && curDrawer) {
+              var newInner = newDrawer.querySelector('#CartDrawer');
+              var curInner = curDrawer.querySelector('#CartDrawer');
+              if (newInner && curInner) curInner.innerHTML = newInner.innerHTML;
+              curDrawer.classList.toggle('is-empty', newDrawer.classList.contains('is-empty'));
+            }
+            return fetch(beaRoot + 'cart?section_id=cart-icon-bubble')
+              .then(function (r) { return r.text(); })
+              .then(function (txt) {
+                var cb = document.getElementById('cart-icon-bubble');
+                if (cb) {
+                  var bd = new DOMParser().parseFromString(txt, 'text/html');
+                  var src = bd.querySelector('.shopify-section') || bd.body;
+                  if (src) cb.innerHTML = src.innerHTML;
+                }
+              }).catch(function(){});
+          });
+      })
+      .then(function () {
+        var drawer = document.querySelector('cart-drawer');
+        if (drawer && typeof drawer.open === 'function') { try { drawer.open(); return; } catch(e){} }
+        if (drawer) { drawer.classList.remove('is-empty'); drawer.classList.add('active','animate'); document.body.classList.add('overflow-hidden'); return; }
+        window.location.href = cartUrl;
+      })
+      .catch(function () { barBtn.disabled = false; barBtnTx.textContent = original; });
+    });
+  }
+})();
+</script>
+
+{% schema %}
+{
+  "name": "BEALGND Set Builder",
+  "tag": "section",
+  "settings": [
+    { "type": "collection", "id": "tier1_collection", "label": "Colección Nivel 1 (activadores >100€)" },
+    { "type": "collection", "id": "tier2_collection", "label": "Colección Nivel 2 (regalos <100€)" },
+    { "type": "header", "content": "Cabecera" },
+    { "type": "text", "id": "title", "label": "Título", "default": "Build your set" },
+    { "type": "textarea", "id": "subtitle", "label": "Descripción", "default": "Add any 2 items and the cheapest one under €100 is on us. One free item per order." },
+    { "type": "header", "content": "FAQ" },
+    { "type": "checkbox", "id": "show_faq", "label": "Mostrar FAQ", "default": true },
+    { "type": "text", "id": "faq_title", "label": "Título FAQ", "default": "FAQ" },
+    { "type": "text", "id": "faq1_q", "label": "Pregunta 1", "default": "How does Buy 1 Get 1 Free work?" },
+    { "type": "textarea", "id": "faq1_a", "label": "Respuesta 1", "default": "Add any 2 items to your cart. The cheapest one under €100 is automatically free at checkout. One free item per order." },
+    { "type": "text", "id": "faq2_q", "label": "Pregunta 2", "default": "Which item becomes free?" },
+    { "type": "textarea", "id": "faq2_a", "label": "Respuesta 2", "default": "The cheapest eligible item under €100 in your cart is the one that becomes free." },
+    { "type": "text", "id": "faq3_q", "label": "Pregunta 3", "default": "Can I choose any gift?" },
+    { "type": "textarea", "id": "faq3_a", "label": "Respuesta 3", "default": "Yes — any item under €100 can be your free gift. Just pick the one you like most in step 2." },
+    { "type": "text", "id": "faq4_q", "label": "Pregunta 4", "default": "When will I receive my order?" },
+    { "type": "textarea", "id": "faq4_a", "label": "Respuesta 4", "default": "Free worldwide shipping with delivery in 6–10 business days. Returns are free within 30 days." }
+  ],
+  "presets": [ { "name": "BEALGND Set Builder" } ]
+}
+{% endschema %}

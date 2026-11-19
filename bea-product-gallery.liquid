@@ -1,0 +1,323 @@
+{%- comment -%}
+  BEALGND · Galería de producto (Dawn)
+  - Barra de segmentos en lugar del contador "1/5".
+  - Altura de galería fija (4:5) para que no salte al cambiar de variante.
+  - Diapositiva de vídeo a tamaño completo (antes quedaba con ancho 0 en móvil).
+  - Enlace "See in video": lleva a la diapositiva del vídeo y lo reproduce
+    con el método nativo de Dawn (setActiveMedia), sin reordenar la galería.
+  - Vídeo en autoplay (sin sonido, en bucle, sin controles) al entrar en pantalla.
+
+  i18n: el texto "See in video" usa la clave bealgnd.gallery.see_in_video (locales/en.default.json).
+  Se traduce desde Translate & Adapt en "Contenido del tema predeterminado" (buscar "bealgnd").
+{%- endcomment -%}
+
+<style>
+  /* Altura de la galería constante (4:5) */
+  media-gallery .product__media-item .product__media,
+  media-gallery .product__media-item > .media,
+  media-gallery .product__media-item{
+    aspect-ratio: 4 / 5 !important;
+    padding-bottom: 0 !important;
+    height: auto !important;
+  }
+  media-gallery .product__media-item img,
+  media-gallery .product__media-item .media img,
+  media-gallery .product__media-item .product__media img{
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block;
+  }
+
+  /* ===== Móvil: cada foto ocupa el 100 % del ancho (sin "peek" de la siguiente) =====
+     Dawn pone los slides a calc(100% - 3rem - espaciado) para que se asome la siguiente foto;
+     aquí se anula para tener una foto por pantalla, a sangre. */
+  @media screen and (max-width: 749px){
+    media-gallery .product__media-list,
+    media-gallery .product__media-list.slider--mobile{
+      gap: 0 !important;
+      column-gap: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      scroll-padding-left: 0 !important;
+      scroll-padding-right: 0 !important;
+    }
+    media-gallery .product__media-list .product__media-item,
+    media-gallery .product__media-list .product__media-item:first-child,
+    media-gallery .product__media-list .product__media-item:last-child,
+    media-gallery .product__media-list .slider__slide{
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 100% !important;
+      flex: 0 0 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      scroll-snap-align: start !important;
+    }
+  }
+
+  /* ===== Diapositiva de VÍDEO: ocupa todo su hueco 4:5 ===== */
+  media-gallery .product-media-container.media-type-video{
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 4 / 5 !important;
+  }
+  media-gallery .product-media-container.media-type-video deferred-media{
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding-top: 0 !important;
+    aspect-ratio: auto !important;
+  }
+  media-gallery .product-media-container.media-type-video .deferred-media__poster{
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  media-gallery .product-media-container.media-type-video .deferred-media__poster img,
+  media-gallery .product-media-container.media-type-video video,
+  media-gallery .product-media-container.media-type-video iframe{
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+  /* cuando el vídeo ya está cargado, el póster se oculta para que se vea el vídeo */
+  media-gallery deferred-media[loaded] > .deferred-media__poster{ display: none !important; }
+  /* el vídeo arranca solo al entrar en pantalla: sin icono de play encima */
+  media-gallery .product-media-container.media-type-video .deferred-media__poster-button{ display: none !important; }
+
+  /* ===== "See in video" · enlace de texto discreto abajo-derecha ===== */
+  .bea-video-cta{
+position:absolute;
+right:18px;
+bottom:31px;
+z-index:2; /* 2, no 3: con 3 empata con el header y se pinta encima del menú lateral */
+display:inline-flex;
+align-items:center;
+gap:6px;
+padding:6px 11px 6px 8px;
+border:0;
+border-radius:20px;
+background:rgba(255,255,255,.82);
+-webkit-backdrop-filter:blur(10px);
+backdrop-filter:blur(10px);
+box-shadow:0 4px 14px rgba(0,0,0,.1);
+font-family:'Inter',sans-serif;
+font-size:10.5px;
+font-weight:500;
+line-height:normal;
+letter-spacing:normal;
+color:#121212;
+text-decoration:none;
+cursor:pointer;
+}
+.bea-video-cta__ic{ width:18px; height:18px; border-radius:9px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.bea-video-cta__ic svg{ width:10px; height:10px; display:block; }
+</style>
+
+<script>
+(function () {
+  {%- comment -%} Texto i18n inyectado desde la clave de Shopify (bealgnd.gallery.*) via filtro | t {%- endcomment -%}
+  var BEA_GALLERY_I18N = {
+    seeInVideo: {{ 'bealgnd.gallery.see_in_video' | t | json }},
+video: {{ 'bealgnd.gallery.video' | t | json }}
+  };
+
+  function initGallery(gallery) {
+    if (!gallery || gallery.dataset.beaBars === '1') return;
+    var list = gallery.querySelector('.product__media-list');
+    if (!list) return;
+    var slides = Array.prototype.slice.call(list.querySelectorAll('.product__media-item'));
+    if (slides.length < 2) return;
+
+    gallery.dataset.beaBars = '1';
+
+    // Barra de segmentos
+    var bars = document.createElement('div');
+    bars.className = 'bea-gallery-bars';
+    slides.forEach(function () {
+      var b = document.createElement('span');
+      b.className = 'bea-gallery-bar';
+      bars.appendChild(b);
+    });
+    var sliderComp = gallery.querySelector('slider-component') || list.parentNode;
+    sliderComp.parentNode.insertBefore(bars, sliderComp.nextSibling);
+    var segs = Array.prototype.slice.call(bars.children);
+
+    var current = 0;
+    function setActive(i) {
+      if (i < 0) i = 0;
+      if (i > segs.length - 1) i = segs.length - 1;
+      if (i === current) return;
+      current = i;
+      segs.forEach(function (s, k) { s.classList.toggle('is-active', k === i); });
+    }
+    segs.forEach(function (s, k) { s.classList.toggle('is-active', k === 0); });
+
+    // La posición real del scroll marca el segmento activo
+    var t;
+    list.addEventListener('scroll', function () {
+      clearTimeout(t);
+      t = setTimeout(function () {
+        var w = list.clientWidth || 1;
+        setActive(Math.round(list.scrollLeft / w));
+      }, 60);
+    }, { passive: true });
+
+    initVideoCta(gallery, list, slides, setActive);
+    initVideoAutoplay(slides);
+  }
+
+  // ===== Autoplay del vídeo: sin sonido, en bucle y sin controles =====
+  // Arranca cuando su diapositiva entra en pantalla y se pausa al salir (ahorra batería).
+  function initVideoAutoplay(slides) {
+    slides.forEach(function (slide) {
+      var dm = slide.querySelector('deferred-media');
+      if (!dm) return;
+
+      function tryPlay(v) {
+        var p = v.play();
+        if (p && p.catch) p.catch(function (err) {
+          if (err && err.name === 'NotAllowedError') {
+            // el navegador bloquea el autoplay (p. ej. iPhone en ahorro de energía): devolvemos los controles
+            v.setAttribute('controls', '');
+            v.controls = true;
+          } else {
+            // reproducción interrumpida por la propia carga de Dawn: reintentar
+            setTimeout(function () { var q = v.play(); if (q && q.catch) q.catch(function () {}); }, 300);
+          }
+        });
+      }
+
+      function prep(v) {
+        if (!v || v.dataset.beaPrep) return;
+        v.dataset.beaPrep = '1';
+        v.removeAttribute('controls');
+        v.controls = false;
+        v.muted = true;
+        v.defaultMuted = true;
+        v.loop = true;
+        v.setAttribute('muted', '');
+        v.setAttribute('loop', '');
+        v.setAttribute('playsinline', '');
+        v.setAttribute('webkit-playsinline', '');
+        // tocar el vídeo = pausar / reanudar
+        v.addEventListener('click', function () { if (v.paused) tryPlay(v); else v.pause(); });
+      }
+
+      // cuando Dawn mete el <video> en la página (por cualquier vía), lo preparamos
+      new MutationObserver(function () {
+        var v = dm.querySelector('video');
+        if (v) prep(v);
+      }).observe(dm, { childList: true, subtree: true });
+
+      if (!('IntersectionObserver' in window)) return;
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          var v = dm.querySelector('video');
+          if (en.isIntersecting) {
+            if (!v) {
+              if (typeof dm.loadContent === 'function') dm.loadContent(false);
+              v = dm.querySelector('video');
+            }
+            if (v) { prep(v); tryPlay(v); }
+          } else if (v && !v.paused) {
+            v.pause();
+          }
+        });
+      }, { threshold: 0.6 }).observe(slide);
+    });
+  }
+
+  function initVideoCta(gallery, list, slides, setActive) {
+    var videoIndex = -1;
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].querySelector('deferred-media, video')) { videoIndex = i; break; }
+    }
+    if (videoIndex === -1) return; // sin vídeo -> sin enlace
+
+    var host = gallery.closest('.product__media-wrapper') || gallery;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    if (host.querySelector('.bea-video-cta')) return;
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bea-video-cta';
+    btn.setAttribute('aria-label', BEA_GALLERY_I18N.seeInVideo);
+    btn.innerHTML =
+      '<span class="bea-video-cta__ic"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 1.5V8.5L8.5 5L2.5 1.5Z" fill="#121212"/></svg></span>' +
+'<span>' + BEA_GALLERY_I18N.video + '</span>';
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var slide = slides[videoIndex];
+      if (!slide) return;
+      var mediaId = slide.getAttribute('data-media-id');
+
+      // Método nativo de Dawn: desplaza hasta la diapositiva y carga/reproduce el vídeo.
+      // IMPORTANTE: segundo parámetro en false; con true Dawn mueve el vídeo a la primera posición.
+      if (mediaId && typeof gallery.setActiveMedia === 'function') {
+        try {
+          gallery.setActiveMedia(mediaId, false);
+          setActive(videoIndex);
+          return;
+        } catch (err) {}
+      }
+
+      // Respaldo: desplazar y pulsar el póster
+      if (list.scrollWidth > list.clientWidth + 5) {
+        list.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+      } else {
+        slide.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setActive(videoIndex);
+      var poster = slide.querySelector('.deferred-media__poster');
+      if (poster) setTimeout(function () { poster.click(); }, 400);
+    });
+
+    host.appendChild(btn);
+  }
+
+  function watchGallery(gallery) { if (!gallery || gallery.dataset.beaWatch === '1') return; var list = gallery.querySelector('.product__media-list'); if (!list) return; gallery.dataset.beaWatch = '1'; var count = list.querySelectorAll('.product__media-item').length; new MutationObserver(function () { var n = list.querySelectorAll('.product__media-item').length; if (n === count) return; count = n; var host = gallery.closest('.product__media-wrapper') || gallery; host.querySelectorAll('.bea-gallery-bars, .bea-video-cta').forEach(function (el) { el.remove(); }); gallery.dataset.beaBars = '0'; initGallery(gallery); }).observe(list, { childList: true }); }
+  function run() {
+    document.querySelectorAll('media-gallery').forEach(initGallery);
+    document.querySelectorAll('media-gallery').forEach(watchGallery);
+  }
+
+  (window.BEA_EARLY = window.BEA_EARLY || []).push(run); /* BEA · montaje antes del primer pintado */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+  window.addEventListener('load', run);
+  document.addEventListener('shopify:section:load', run);
+
+  /* BEA · al cambiar de color Dawn hacía scroll de la página hasta la foto (en móvil subía de golpe desde los colores).
+     Ahora la página se queda donde está; solo el carrusel vuelve a la primera foto del color nuevo. Resto igual que Dawn 16. */
+  if (window.customElements) customElements.whenDefined('media-gallery').then(function () {
+    var P = customElements.get('media-gallery').prototype;
+    if (P.__beaNoScroll) return; P.__beaNoScroll = true;
+    P.setActiveMedia = function (mediaId, prepend) {
+      var viewer = this.elements.viewer;
+      var activeMedia = viewer.querySelector('[data-media-id="' + mediaId + '"]') || viewer.querySelector('[data-media-id]');
+      if (!activeMedia) return;
+      viewer.querySelectorAll('[data-media-id]').forEach(function (el) { el.classList.remove('is-active'); });
+      activeMedia.classList.add('is-active');
+      if (prepend) {
+        if (activeMedia.parentElement.firstChild !== activeMedia) activeMedia.parentElement.prepend(activeMedia);
+        if (this.elements.thumbnails) { var t2 = this.elements.thumbnails.querySelector('[data-target="' + mediaId + '"]'); if (t2 && t2.parentElement.firstChild !== t2) t2.parentElement.prepend(t2); }
+        if (viewer.slider) viewer.resetPages();
+      }
+      if (!this.mql.matches || this.elements.thumbnails) activeMedia.parentElement.scrollTo({ left: activeMedia.offsetLeft });
+      this.playActiveMedia(activeMedia);
+      if (!this.elements.thumbnails) return;
+      var at = this.elements.thumbnails.querySelector('[data-target="' + mediaId + '"]');
+      if (at) { this.setActiveThumbnail(at); this.announceLiveRegion(activeMedia, at.dataset.mediaPosition); }
+    };
+  });
+})();
+</script>

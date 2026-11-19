@@ -1,0 +1,99 @@
+{%- comment -%}
+  BEALGND · selector país/idioma para el MENÚ lateral.
+  Copia independiente del selector del footer (clases y componente propios,
+  para que no choquen). Banderita + "€ / English" + panel hacia arriba.
+{%- endcomment -%}
+
+{%- if localization.available_countries.size > 1 or localization.available_languages.size > 1 -%}
+  {%- assign cc = localization.country.iso_code | downcase -%}
+  <div class="bea-mloc">
+    {%- form 'localization', id: 'BeaMenuLocForm', class: 'bea-mloc__form' -%}
+      <bea-menu-locale>
+        <button type="button" class="bea-mloc__toggle" aria-expanded="false">
+          <img class="bea-mloc__flag" src="https://flagcdn.com/w40/{{ cc }}.png" alt="" width="20" height="20" loading="lazy">
+          <span class="bea-mloc__current">
+            {%- if localization.available_languages.size > 1 -%}{{ localization.language.iso_code | upcase }} / {% endif -%}
+            {%- if localization.available_countries.size > 1 -%}{{ localization.country.currency.symbol }} / {% endif -%}
+            {{ localization.language.endonym_name | capitalize }}
+          </span>
+          <svg class="bea-mloc__caret" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="bea-mloc__panel" hidden>
+          {%- if localization.available_countries.size > 1 -%}
+            <p class="bea-mloc__group-label">{{ 'localization.country_label' | t | default: 'Country / Region' }}</p>
+            <ul class="bea-mloc__list">
+              {%- for country in localization.available_countries -%}
+                {%- assign ccc = country.iso_code | downcase -%}
+                <li>
+                  <button type="button" class="bea-mloc__opt{% if country.iso_code == localization.country.iso_code %} is-active{% endif %}" data-value="{{ country.iso_code }}" data-field="country_code">
+                    <img class="bea-mloc__flag" src="https://flagcdn.com/w40/{{ ccc }}.png" alt="" width="20" height="20" loading="lazy">
+                    <span>{{ country.name }} <span class="bea-mloc__cur">({{ country.currency.iso_code }} {{ country.currency.symbol }})</span></span>
+                  </button>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+          {%- if localization.available_languages.size > 1 -%}
+            <p class="bea-mloc__group-label">{{ 'localization.language_label' | t | default: 'Language' }}</p>
+            <ul class="bea-mloc__list">
+              {%- for language in localization.available_languages -%}
+                <li>
+                  <button type="button" class="bea-mloc__opt{% if language.iso_code == localization.language.iso_code %} is-active{% endif %}" data-value="{{ language.iso_code }}" data-field="locale_code">
+                    <span>{{ language.endonym_name | capitalize }}</span>
+                  </button>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+        </div>
+
+        <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
+        <input type="hidden" name="locale_code" value="{{ localization.language.iso_code }}">
+      </bea-menu-locale>
+    {%- endform -%}
+  </div>
+
+  <style>
+    .bea-mloc { position: relative; }
+    .bea-mloc__form { margin: 0; }
+    .bea-mloc__toggle { display:inline-flex; align-items:center; gap:8px; background:transparent; border:0; cursor:pointer; padding:4px 2px; font-family:"Inter",sans-serif; font-size:12px; letter-spacing:-.03em; color:#121212; }
+    .bea-mloc__flag { width:20px; height:20px; border-radius:50%; object-fit:cover; flex:0 0 20px; display:block; }
+    .bea-mloc__caret { width:11px; height:8px; margin-left:2px; color:#121212; }
+    .bea-mloc__panel { position:absolute; left:0; bottom:calc(100% + 8px); background:#fff; border:1px solid rgba(18,18,18,.12); border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,.12); padding:10px; min-width:230px; max-height:300px; overflow-y:auto; z-index:20; }
+    .bea-mloc__group-label { font-family:"Inter",sans-serif; font-size:10px; font-weight:600; letter-spacing:-.02em; text-transform:uppercase; color:rgba(18,18,18,.45); margin:6px 6px 4px; }
+    .bea-mloc__list { list-style:none; margin:0 0 6px; padding:0; }
+    .bea-mloc__opt { display:flex; align-items:center; gap:8px; width:100%; background:transparent; border:0; cursor:pointer; text-align:left; padding:8px 6px; border-radius:7px; font-family:"Inter",sans-serif; font-size:13px; letter-spacing:-.03em; color:#121212; }
+    .bea-mloc__opt:hover { background:rgba(18,18,18,.05); }
+    .bea-mloc__opt.is-active { font-weight:600; }
+    .bea-mloc__cur { color:rgba(18,18,18,.45); }
+  </style>
+
+  <script>
+    if (!customElements.get('bea-menu-locale')) {
+      customElements.define('bea-menu-locale', class extends HTMLElement {
+        connectedCallback() {
+          this.toggle = this.querySelector('.bea-mloc__toggle');
+          this.panel = this.querySelector('.bea-mloc__panel');
+          this.form = this.closest('form');
+          var self = this;
+          this.toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (self.panel.hasAttribute('hidden')) { self.panel.removeAttribute('hidden'); self.toggle.setAttribute('aria-expanded','true'); }
+            else { self.panel.setAttribute('hidden',''); self.toggle.setAttribute('aria-expanded','false'); }
+          });
+          this.querySelectorAll('.bea-mloc__opt').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var input = self.form.querySelector('input[name="' + btn.dataset.field + '"]');
+              if (input) input.value = btn.dataset.value;
+              self.form.submit();
+            });
+          });
+          document.addEventListener('click', function (e) {
+            if (!self.contains(e.target)) { self.panel.setAttribute('hidden',''); self.toggle.setAttribute('aria-expanded','false'); }
+          });
+        }
+      });
+    }
+  </script>
+{%- endif -%}

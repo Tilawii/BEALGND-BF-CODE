@@ -1,0 +1,14 @@
+<ul class="bea-menu bea-menu--big list-unstyled" role="list" {{ block.shopify_attributes }}>
+  {%- content_for 'blocks' -%}
+</ul>
+
+{% schema %}
+{
+  "name": "Enlaces grandes",
+  "tag": null,
+  "blocks": [{ "type": "bea-menu-big-link" }],
+  "settings": [
+    { "type": "paragraph", "content": "Enlaces grandes de arriba del menú lateral. Arrastra para cambiar el orden." }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,14 @@
+<ul class="bea-menu bea-menu--secondary list-unstyled" role="list" {{ block.shopify_attributes }}>
+  {%- content_for 'blocks' -%}
+</ul>
+
+{% schema %}
+{
+  "name": "Enlaces del menú",
+  "tag": null,
+  "blocks": [{ "type": "bea-menu-link" }],
+  "settings": [
+    { "type": "paragraph", "content": "Enlaces de debajo. Si un enlace tiene subenlaces dentro, se convierte en desplegable." }
+  ]
+}
+{% endschema %}

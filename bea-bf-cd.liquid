@@ -1,0 +1,40 @@
+{%- comment -%}
+  BEALGND · Cuenta atrás de Black Friday (nov 2026)
+  Uso: {% render 'bea-bf-cd', fmt: 'words' %}   fmt: words · colon · blocks
+  El texto inicial sale del servidor; assets/bea-bf.js lo actualiza cada segundo
+  y lo oculta al llegar a la hora de fin (nunca 00:00 ni negativos).
+{%- endcomment -%}
+{%- liquid
+  assign f = fmt | default: 'words'
+  assign end_s = settings.bf_end | date: '%s' | plus: 0
+  assign now_s = 'now' | date: '%s' | plus: 0
+  assign left = end_s | minus: now_s | at_least: 0
+  assign d = left | divided_by: 86400
+  assign h = left | modulo: 86400 | divided_by: 3600
+  assign m = left | modulo: 3600 | divided_by: 60
+  assign dd = d | prepend: '0' | slice: -2, 2
+  assign hh = h | prepend: '0' | slice: -2, 2
+  assign mm = m | prepend: '0' | slice: -2, 2
+-%}
+{%- liquid
+  case request.locale.iso_code
+    when 'es'
+      assign uD = 'D'
+      assign uDays = 'DÍAS'
+      assign uHours = 'HORAS'
+    when 'fr'
+      assign uD = 'J'
+      assign uDays = 'JOURS'
+      assign uHours = 'HEURES'
+    else
+      assign uD = 'D'
+      assign uDays = 'DAYS'
+      assign uHours = 'HOURS'
+  endcase
+-%}{%- if f == 'blocks' -%}
+<span class="bea-bf-blocks" data-bea-bf-cd data-fmt="blocks"><span class="bea-bf-blocks__i"><b data-d>{{ dd }}</b><small>{{ uDays }}</small></span><span class="bea-bf-blocks__i"><b data-h>{{ hh }}</b><small>{{ uHours }}</small></span><span class="bea-bf-blocks__i"><b data-m>{{ mm }}</b><small>MIN</small></span></span>
+{%- elsif f == 'colon' -%}
+<span class="bea-bf-cd" data-bea-bf-cd data-fmt="colon">{{ dd }}{{ uD }} : {{ hh }}H : {{ mm }}M</span>
+{%- else -%}
+<span class="bea-bf-cd" data-bea-bf-cd data-fmt="words">{{ dd }}{{ uD }} {{ hh }}H {{ mm }}M</span>
+{%- endif -%}

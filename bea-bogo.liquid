@@ -1,0 +1,629 @@
+{%- comment -%}
+  bea-bogo.liquid · BEALGND (v12 · oct 2026 · "Regalo incluido")
+  Sustituye al carrusel "+ Add free" (v11). El regalo ya viene incluido al anadir el bolso:
+  - Sello de cristal sobre la foto: miniatura del regalo + "BUY 1, GET 1 FREE / + FREE <regalo>".
+  - Cajas encima del boton: "Bag + FREE gift" (regalo por defecto, "Change gift") y, solo en el test A,
+    "Complete set · Best value" (con un producto al 50 %).
+  - Boton "Add to cart + free gift" con precio tachado.
+  - Al anadir: bolso + regalo (+ producto al 50 % si se elige la caja Complete set) en una sola peticion.
+    En el test B no hay caja Complete set: tras anadir sale un pop-up con los productos al 50 %.
+  La version del test se lee de snippets/bea-ab.liquid ("A" o "B").
+
+  Logica de oferta (igual que la Shopify Function 'bogo-jerarquia', por colecciones):
+  - Producto en 'bogo-oferta-1-compra' -> regalos de 'bogo-oferta-1-regalo', 50 % en 'bogo-oferta-1-upsell'.
+  - Si no, en 'bogo-oferta-2-compra' -> 'bogo-oferta-2-regalo' / 'bogo-oferta-2-upsell'.
+  - Si no esta en ninguna -> no se muestra nada (boton normal).
+  Regalo por defecto: Croc Duffle -> Croc MacBook Case; Monogram Duffle y Backpack -> Handbag Pouch;
+  resto -> Cardholder. Color del regalo: el del bolso; si no existe, Black; si no, el primero disponible.
+
+  {%- when 'bea_bogo' -%}
+  {%- render 'bea-bogo', block: block, product: product -%}
+  i18n: claves bealgnd.gi.* (en.default.json / es.json / fr.json).
+{%- endcomment -%}
+
+{%- liquid
+  capture bea_ab
+    render 'bea-ab'
+  endcapture
+  assign bea_ab = bea_ab | strip
+  if bea_ab != 'B'
+    assign bea_ab = 'A'
+  endif
+
+  assign o1_buy = collections['bogo-oferta-1-compra']
+  assign o2_buy = collections['bogo-oferta-2-compra']
+
+  assign in_o1 = false
+  for p in o1_buy.products
+    if p.id == product.id
+      assign in_o1 = true
+      break
+    endif
+  endfor
+  assign in_o2 = false
+  unless in_o1
+    for p in o2_buy.products
+      if p.id == product.id
+        assign in_o2 = true
+        break
+      endif
+    endfor
+  endunless
+
+  assign gift_collection = null
+  assign up_collection = null
+  if in_o1
+    assign gift_collection = collections['bogo-oferta-1-regalo']
+    assign up_collection = collections['bogo-oferta-1-upsell']
+  elsif in_o2
+    assign gift_collection = collections['bogo-oferta-2-regalo']
+    assign up_collection = collections['bogo-oferta-2-upsell']
+  endif
+
+  assign gift_count = 0
+  if gift_collection
+    for gp in gift_collection.products
+      if gp.id != product.id and gp.available
+        assign gift_count = gift_count | plus: 1
+      endif
+    endfor
+  endif
+
+  assign def_gift = 'tarjetero-lgnd-monogram'
+  case product.handle
+    when 'croc-duffle-bag'
+      assign def_gift = 'macbook-croc-case'
+    when 'monogram-duffle-bag', 'monogram-backpack'
+      assign def_gift = 'bealgnd-pouch-handbag-monogram'
+  endcase
+
+  assign mc_idx = 0
+  for opt in product.options_with_values
+    assign oname = opt.name | downcase
+    if oname contains 'color' or oname contains 'colour' or oname contains 'colores' or oname contains 'couleur'
+      assign mc_idx = forloop.index
+      break
+    endif
+  endfor
+  assign mc_idx0 = mc_idx | minus: 1
+-%}
+
+{%- if gift_count > 0 -%}
+  {%- render 'bea-gift-core' -%}
+
+  <div id="bea-gi-{{ block.id }}" class="bea-gi" data-ab="{{ bea_ab }}" {{ block.shopify_attributes }}></div>
+
+  <script type="application/json" id="bea-gi-data-{{ block.id }}">
+    {
+      "ab": {{ bea_ab | json }},
+      "defGift": {{ def_gift | json }},
+      "offer": {% if in_o1 %}1{% else %}2{% endif %},
+      "o1up": {%- assign bea_o1up = false -%}{%- for p in collections['bogo-oferta-1-upsell'].products -%}{%- if p.id == product.id -%}{%- assign bea_o1up = true -%}{%- break -%}{%- endif -%}{%- endfor -%}{{ bea_o1up | json }},
+      "o1ids": [{%- for p in o1_buy.products -%}{{ p.id }}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+      "o2ids": [{%- for p in o2_buy.products -%}{{ p.id }}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+      "main": {
+        "pid": {{ product.id }},
+        "title": {{ product.title | json }},
+        "variants": {
+          {%- for v in product.variants -%}
+            {%- liquid
+              assign vc = ''
+              if mc_idx > 0
+                assign vc = v.options[mc_idx0]
+              endif
+            -%}
+            "{{ v.id }}": {"price": {{ v.price }}, "cmp": {{ v.compare_at_price | default: 0 }}, "color": {{ vc | json }}, "available": {{ v.available | json }}}{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        }
+      },
+      "gifts": [
+        {%- assign firstg = true -%}
+        {%- for gp in gift_collection.products -%}
+          {%- if gp.id != product.id and gp.available -%}
+            {%- unless firstg -%},{%- endunless -%}{%- assign firstg = false -%}
+            {%- render 'bea-gi-product-json', p: gp -%}
+          {%- endif -%}
+        {%- endfor -%}
+      ],
+      "ups": [
+        {%- assign firstu = true -%}
+        {%- if up_collection -%}
+          {%- assign ups_sorted = up_collection.products | sort: 'best-selling' -%}
+          {%- for up in ups_sorted -%}
+            {%- if up.id != product.id and up.available -%}
+              {%- unless firstu -%},{%- endunless -%}{%- assign firstu = false -%}
+              {%- render 'bea-gi-product-json', p: up -%}
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endif -%}
+      ],
+      "t": {
+        "sealTitle": {{ 'bealgnd.gi.seal_title' | t | json }},
+        "sealLine": {{ 'bealgnd.gi.seal_line_html' | t | json }},
+        "halfTitle": {{ 'bealgnd.gi.strip_title' | t | json }},
+        "halfBox": {{ 'bealgnd.gi.half_box_html' | t | json }},
+        "halfSealLine": {{ 'bealgnd.gi.half_seal_line' | t | json }},
+        "headTitle": {{ 'bealgnd.gi.head_title' | t | json }},
+        "headSub": {{ 'bealgnd.gi.head_sub' | t | json }},
+        "boxGift": {{ 'bealgnd.gi.box_gift' | t | json }},
+        "boxSet": {{ 'bealgnd.gi.box_set' | t | json }},
+        "bestValue": {{ 'bealgnd.gi.best_value' | t | json }},
+        "freeGift": {{ 'bealgnd.gi.free_gift' | t | json }},
+        "off50": {{ 'bealgnd.gi.off50' | t | json }},
+        "color": {{ 'bealgnd.gi.color' | t | json }},
+        "changeGift": {{ 'bealgnd.gi.change_gift' | t | json }},
+        "atc": {{ 'bealgnd.gi.atc' | t | json }},
+        "sheetTitle": {{ 'bealgnd.gi.sheet_title' | t | json }},
+        "recommended": {{ 'bealgnd.gi.recommended' | t | json }},
+        "saveGift": {{ 'bealgnd.gi.save_gift' | t | json }},
+        "chooseColor": {{ 'bealgnd.gi.choose_color' | t | json }},
+        "save": {{ 'bealgnd.gi.save' | t | json }},
+        "close": {{ 'bealgnd.gi.close' | t | json }},
+        "popAdded": {{ 'bealgnd.gi.pop_added' | t | json }},
+        "popTitle": {{ 'bealgnd.gi.pop_title' | t | json }},
+        "add": {{ 'bealgnd.gi.add' | t | json }},
+        "added": {{ 'bealgnd.gi.added' | t | json }},
+        "noThanks": {{ 'bealgnd.gi.no_thanks' | t | json }},
+        "goCart": {{ 'bealgnd.gi.go_cart' | t | json }},
+        "changeGiftAria": {{ 'bealgnd.gi.change_gift' | t | json }}
+      }
+    }
+  </script>
+
+  <style>
+    #bea-gi-{{ block.id }}{margin:25px 0 14px;font-family:'Inter',sans-serif;letter-spacing:normal;color:#121212;display:flex;flex-direction:column;gap:10px;}
+    #bea-gi-{{ block.id }} .bea-gi__head{display:flex;align-items:center;gap:7px;font-size:11.5px;line-height:normal;white-space:nowrap;}
+    #bea-gi-{{ block.id }} .bea-gi__head svg{width:15px;height:15px;flex:0 0 auto;display:block;}
+    #bea-gi-{{ block.id }} .bea-gi__head b{font-weight:600;}
+    #bea-gi-{{ block.id }} .bea-gi__head span{color:#8c8c8c;font-weight:400;}
+    #bea-gi-{{ block.id }} .bea-gi__box{position:relative;box-sizing:border-box;width:100%;display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:10px;background:#fff;border:1px solid #e0e0e0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    #bea-gi-{{ block.id }} .bea-gi__box.is-on{background:#fbfbfb;border:1.5px solid #121212;padding:11.5px;}
+    #bea-gi-{{ block.id }} .bea-gi__badge{position:absolute;top:-11px;right:9px;background:#121212;color:#fff;border-radius:4px;padding:4px 9px;font-size:11px;font-weight:600;line-height:normal;white-space:nowrap;}
+    #bea-gi-{{ block.id }} .bea-gi__box.is-on .bea-gi__badge{top:-11.5px;right:8.5px;}
+    #bea-gi-{{ block.id }} .bea-gi__top{display:flex;align-items:center;gap:10px;}
+    #bea-gi-{{ block.id }} .bea-gi__ttl{flex:1 1 auto;min-width:0;font-size:13px;font-weight:600;line-height:normal;}
+    #bea-gi-{{ block.id }} .bea-gi__pr{display:flex;flex-direction:column;align-items:flex-end;gap:1px;white-space:nowrap;line-height:normal;}
+    #bea-gi-{{ block.id }} .bea-gi__pr b{font-size:14px;font-weight:600;}
+    #bea-gi-{{ block.id }} .bea-gi__pr s{font-size:11px;font-weight:400;color:#8c8c8c;}
+    #bea-gi-{{ block.id }} .bea-gi__item{display:flex;align-items:center;gap:10px;}
+    #bea-gi-{{ block.id }} .bea-gi__info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px;line-height:normal;}
+    #bea-gi-{{ block.id }} .bea-gi__name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #bea-gi-{{ block.id }} .bea-gi__line{display:flex;align-items:center;gap:5px;}
+    #bea-gi-{{ block.id }} .bea-gi__line s{font-size:10px;color:#8c8c8c;white-space:nowrap;}
+    #bea-gi-{{ block.id }} .bea-gi__color{font-size:10px;font-weight:300;color:#8c8c8c;white-space:nowrap;}
+    #bea-gi-{{ block.id }} .bea-gi__color b{font-weight:500;color:#121212;}
+    #bea-gi-{{ block.id }} .bea-gi__change{flex:0 0 auto;align-self:center;background:none;border:0;padding:12px 0 12px 14px;margin:-12px 0;font-family:inherit;font-size:12px;font-weight:400;line-height:normal;color:#121212;text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
+
+    /* Sello sobre la foto y boton Video (cristal) */
+    .bea-seal{position:absolute;left:16px;bottom:15px;z-index:2;display:flex;align-items:center;gap:12px;padding:6px 16px 6px 6px;border-radius:12px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 4px 14px rgba(0,0,0,.1);font-family:'Inter',sans-serif;letter-spacing:normal;color:#121212;pointer-events:none;max-width:none;box-sizing:border-box;}
+    .bea-seal__img{flex:0 0 auto;width:50px;height:50px;border-radius:8px;background:#fafafa;overflow:hidden;}
+    .bea-seal__img img{width:100%;height:100%;object-fit:cover;display:block;}
+    .bea-seal__txt{display:flex;flex-direction:column;gap:4px;min-width:0;}
+    .bea-seal__t1{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:600;letter-spacing:.28px;line-height:normal;white-space:nowrap;}
+    .bea-seal__t1 svg{width:14px;height:14px;flex:0 0 auto;display:block;}
+    .bea-seal__t2{font-size:12.5px;font-weight:400;line-height:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .bea-seal__t2 b{font-weight:600;color:#21851a;}
+
+    /* Precio tachado dentro del boton */
+    .product-form__submit .bea-add-price s{color:rgba(255,255,255,.6);font-weight:500;}
+  </style>
+
+  <script>
+    (function () {
+      var root = document.getElementById('bea-gi-{{ block.id }}');
+      var dataEl = document.getElementById('bea-gi-data-{{ block.id }}');
+      if (!root || !dataEl) return;
+      var D;
+      try { D = JSON.parse(dataEl.textContent); } catch (e) { return; }
+      var T = D.t, AB = D.ab;
+      var esc = window.beaEsc, money = window.beaMoney;
+      var GIFT15 = '<svg viewBox="0 0 15 15" fill="none" stroke="#121212" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5h10c.345 0 .625.28.625.625v1.25c0 .345-.28.625-.625.625h-10a.625.625 0 0 1-.625-.625v-1.25C1.875 5.28 2.155 5 2.5 5Z"/><path d="M7.5 5v8.125"/><path d="M11.875 7.5v4.375a1.25 1.25 0 0 1-1.25 1.25h-6.25a1.25 1.25 0 0 1-1.25-1.25V7.5"/><path d="M4.688 5a1.563 1.563 0 0 1 0-3.125C6.875 1.875 7.5 5 7.5 5s.625-3.125 2.813-3.125a1.563 1.563 0 0 1 0 3.125"/></svg>';
+      var GIFT14 = GIFT15.replace('viewBox="0 0 15 15"', 'viewBox="0 0 15 15" width="14" height="14"');
+
+      /* ---------- Datos ---------- */
+      function byHandle(list, h) { for (var i = 0; i < list.length; i++) if (list[i].handle === h) return list[i]; return null; }
+      function byPid(list, pid) { for (var i = 0; i < list.length; i++) if (String(list[i].pid) === String(pid)) return list[i]; return null; }
+      function vById(p, id) { for (var i = 0; i < p.variants.length; i++) if (String(p.variants[i].id) === String(id)) return p.variants[i]; return null; }
+      /* Colores comparados por significado, no por el nombre traducido (el bolso puede venir en ingles y el regalo en ES/FR) */
+      var CANON = { negro: 'black', noir: 'black', verde: 'green', vert: 'green', azul: 'blue', bleu: 'blue', 'marrón': 'brown', marron: 'brown', blanco: 'white', blanc: 'white', gris: 'grey', gray: 'grey', rojo: 'red', rouge: 'red', rosa: 'pink', rose: 'pink', 'azul marino': 'navy', 'bleu marine': 'navy', crema: 'cream', 'crème': 'cream', creme: 'cream' };
+      function canon(c) { c = (c || '').toLowerCase().trim(); return CANON[c] || c; }
+      function vByColor(p, c) { if (!c) return null; c = canon(c); for (var i = 0; i < p.variants.length; i++) if (canon(p.variants[i].color) === c) return p.variants[i]; return null; }
+      function bestVariant(p, color) { return vByColor(p, color) || vByColor(p, 'Black') || vByColor(p, 'Negro') || vByColor(p, 'Noir') || p.variants[0]; }
+
+      var gifts = D.gifts.filter(function (g) { return g.variants.length; });
+      if (!gifts.length) return;
+      var defGift = byHandle(gifts, D.defGift) || gifts[0];
+      gifts.sort(function (a, b) { return ((a === defGift ? -1 : 0) - (b === defGift ? -1 : 0)) || (b.variants[0].price - a.variants[0].price); });
+      var ups = D.ups.filter(function (u) { return u.variants.length; });
+      /* Oferta 2: la Function 'bogo-jerarquia' solo da el 50 % a un upsell que no sea mas caro que el bolso de oferta 2 mas caro del carrito
+         (p. ej. Magnet + Crossbody = Crossbody a precio completo). La caja "Complete set" solo ofrece upsells que cumplan eso con este bolso. */
+      function minPrice(p) { var m = Infinity; p.variants.forEach(function (v) { if (v.price < m) m = v.price; }); return m; }
+      var mainMax = 0;
+      Object.keys(D.main.variants || {}).forEach(function (k) { var pr = D.main.variants[k].price || 0; if (pr > mainMax) mainMax = pr; });
+      var boxUps = D.offer === 2 ? ups.filter(function (u) { return minPrice(u) <= mainMax; }) : ups;
+      var setUp = byHandle(boxUps, 'neceser-dopp-kit') || boxUps[0] || null;
+
+      function mainForm() {
+        var info = root.closest('product-info') || document;
+        return info.querySelector('form[data-type="add-to-cart-form"]');
+      }
+      function mainVid() {
+        var f = mainForm();
+        var inp = f && f.querySelector('input[name="id"]');
+        return inp && inp.value ? inp.value : null;
+      }
+      function mainVar() { var id = mainVid(); return (id && D.main.variants[id]) ? D.main.variants[id] : null; }
+
+      var st = { box: 'gift', gPid: defGift.pid, gVid: null, uVid: null, gUser: false, uUser: false };
+      function syncColors() {
+        var mv = mainVar(), col = mv ? mv.color : '';
+        var g = byPid(gifts, st.gPid) || defGift;
+        if (!st.gUser || !vById(g, st.gVid)) st.gVid = bestVariant(g, col).id;
+        if (setUp && (!st.uUser || !vById(setUp, st.uVid))) st.uVid = bestVariant(setUp, col).id;
+      }
+      function curGift() { var g = byPid(gifts, st.gPid) || defGift; return { p: g, v: vById(g, st.gVid) || g.variants[0] }; }
+      function curUp() { if (!setUp) return null; return { p: setUp, v: vById(setUp, st.uVid) || setUp.variants[0] }; }
+      function half(c) { return Math.round(c / 2); }
+
+      /* ---------- Pintar ---------- */
+      function tag(txt, icon) { return '<span class="bea-tag">' + (icon ? window.BEA_ICON_GIFT : '') + esc(txt) + '</span>'; }
+      function thumb(img, act, label) {
+        return '<span class="bea-thumb" data-act="' + act + '"><span class="bea-thumb__img">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '') + '</span>' +
+          '<button type="button" class="bea-thumb__btn" data-act="' + act + '" aria-label="' + esc(label) + '">' + window.BEA_ICON_CHEV + '</button></span>';
+      }
+      function colorLine(v) { return v && v.color ? '<span class="bea-gi__color">' + esc(T.color) + ' <b>' + esc(v.color) + '</b></span>' : ''; }
+      function giftRow(g, withChange) {
+        return '<div class="bea-gi__item">' + thumb(g.v.img, 'gift', T.changeGift) +
+          '<div class="bea-gi__info"><span class="bea-gi__name">+ ' + esc(g.p.title) + '</span>' +
+          '<span class="bea-gi__line"><s>' + money(g.v.price) + '</s>' + tag(T.freeGift, true) + '</span>' + colorLine(g.v) + '</div>' +
+          (withChange ? '<button type="button" class="bea-gi__change" data-act="gift">' + esc(T.changeGift) + '</button>' : '') + '</div>';
+      }
+      function upRow(u) {
+        return '<div class="bea-gi__item">' + thumb(u.v.img, 'up', T.chooseColor) +
+          '<div class="bea-gi__info"><span class="bea-gi__name">+ ' + esc(u.p.title) + '</span>' +
+          '<span class="bea-gi__line"><s>' + money(u.v.price) + ' → ' + money(half(u.v.price)) + '</s>' + tag(T.off50, false) + '</span>' + colorLine(u.v) + '</div></div>';
+      }
+      function totals() {
+        var mv = mainVar(); var bag = mv ? mv.price : 0;
+        var g = curGift(), u = curUp();
+        var bw = (mv && mv.cmp > bag) ? mv.cmp : 0; var r = { giftNow: bag, giftWas: bw, setNow: 0, setWas: 0 };
+        if (u) { r.setNow = bag + half(u.v.price); r.setWas = (bw || bag) + u.v.price; }
+        return r;
+      }
+      function renderBoxes() {
+        var g = curGift(), u = curUp(), tt = totals();
+        var BF = window.BEA_BF;
+          var h = (BF && BF.live && BF.strip)
+            ? '<div class="bea-gi__bf" data-bea-bf><b>' + esc(BF.strip) + '</b><span data-bea-bf-cd-wrap>' + esc(BF.ends || '') + ' <span data-bea-bf-cd data-fmt="words"></span></span></div>'
+            : '<div class="bea-gi__head">' + GIFT15 + '<b>' + esc(T.headTitle) + '</b><span> · ' + esc(T.headSub) + '</span></div>';
+        h += '<div class="bea-gi__box' + (st.box === 'gift' ? ' is-on' : '') + '" data-box="gift" role="radio" aria-checked="' + (st.box === 'gift') + '" tabindex="0">' +
+          '<div class="bea-gi__top"><span class="bea-radio' + (st.box === 'gift' ? ' is-on' : '') + '"></span><span class="bea-gi__ttl">' + esc(T.boxGift) + '</span>' +
+          '<span class="bea-gi__pr"><b>' + money(tt.giftNow) + '</b>' + sx(tt.giftWas, tt.giftNow) + '</span></div>' + giftRow(g, true) + '</div>';
+        if (AB === 'A' && u) {
+          h += '<div class="bea-gi__box' + (st.box === 'set' ? ' is-on' : '') + '" data-box="set" role="radio" aria-checked="' + (st.box === 'set') + '" tabindex="0">' +
+            '<span class="bea-gi__badge">' + esc(T.bestValue) + '</span>' +
+            '<div class="bea-gi__top"><span class="bea-radio' + (st.box === 'set' ? ' is-on' : '') + '"></span><span class="bea-gi__ttl">' + esc(T.boxSet) + '</span>' +
+            '<span class="bea-gi__pr"><b>' + money(tt.setNow) + '</b>' + sx(tt.setWas, tt.setNow) + '</span></div>' + giftRow(g, false) + upRow(u) + '</div>';
+        }
+        root.innerHTML = h;
+      }
+
+      function mediaHost() {
+        var info = root.closest('product-info') || root.closest('section') || document;
+        var mg = info.querySelector('media-gallery') || document.querySelector('media-gallery');
+        if (!mg) return null;
+        return mg.closest('.product__media-wrapper') || mg;
+      }
+      function renderSeal() {
+        if (upsellMode) { renderHalf(); return; }
+        if (plainMode) return;
+        var host = mediaHost();
+        if (!host) return;
+        if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+        var seal = host.querySelector('.bea-seal');
+        if (!seal) { seal = document.createElement('div'); seal.className = 'bea-seal'; seal.setAttribute('aria-hidden', 'true'); host.appendChild(seal); }
+        var g = curGift();
+        var html = '<span class="bea-seal__img">' + (g.v.img ? '<img src="' + esc(g.v.img) + '" alt="">' : '') + '</span>' +
+          '<span class="bea-seal__txt"><span class="bea-seal__t1">' + GIFT14 + esc(T.sealTitle) + '</span>' +
+          '<span class="bea-seal__t2">' + T.sealLine.replace('{gift}', esc(g.p.short)) + '</span></span>';
+        if (seal.innerHTML !== html) seal.innerHTML = html;
+        placeOverlays();
+      }
+      /* Sello y "Video" a 16 / 18 px del borde real de la foto (en movil la galeria va a sangre y el contenedor tiene margen) */
+      function placeOverlays() {
+        var host = mediaHost(); if (!host) return;
+        var list = host.querySelector('.product__media-list') || host;
+        var hr = host.getBoundingClientRect(), lr = list.getBoundingClientRect();
+        if (!lr.width) return;
+        var seal = host.querySelector('.bea-seal');
+        var vid = host.querySelector('.bea-video-cta');
+        /* Escritorio (galeria en cuadricula): sello y Video sobre la PRIMERA foto, no al final de la cuadricula */
+        var first = list.querySelector('.product__media-item');
+        var grid = window.innerWidth >= 750 && first && first.getBoundingClientRect().width < lr.width - 10;
+        var box = grid ? first.getBoundingClientRect() : lr;
+        if (vid) {
+          vid.style.right = Math.round(hr.right - box.right + 18) + 'px';
+          if (grid) { vid.style.bottom = 'auto'; vid.style.top = Math.round(box.bottom - hr.top - 31 - vid.offsetHeight) + 'px'; }
+          else { vid.style.top = ''; vid.style.bottom = ''; }
+        }
+        if (seal) {
+          seal.style.left = Math.round(box.left - hr.left + 16) + 'px';
+          var room = box.width - 16 - (vid ? vid.getBoundingClientRect().width + 18 + 10 : 16);
+          seal.style.maxWidth = Math.max(180, Math.round(room)) + 'px';
+          var t1 = seal.querySelector('.bea-seal__t1');
+          if (t1) { t1.style.fontSize = ''; var fs = parseFloat(getComputedStyle(t1).fontSize) || 14, n = 0; while (t1.scrollWidth > t1.clientWidth + 1 && fs > 10.5 && n++ < 12) { fs -= 0.5; t1.style.fontSize = fs + 'px'; } }
+          if (grid) { seal.style.bottom = 'auto'; seal.style.top = Math.round(box.bottom - hr.top - 15 - seal.offsetHeight) + 'px'; }
+          else { seal.style.top = ''; seal.style.bottom = ''; }
+        }
+      }
+      window.addEventListener('resize', function () { clearTimeout(placeOverlays._t); placeOverlays._t = setTimeout(placeOverlays, 100); });
+
+      /* Boton "Add to cart + free gift  ~~€225~~ €160" (bea-product-atc.liquid delega aqui) */
+      function decorate() {
+        if (upsellMode || plainMode) { renderAll(); return true; }
+        var f = mainForm();
+        var btn = f && f.querySelector('.product-form__submit');
+        if (!btn || btn.disabled || !mainVar() || !mainVar().available) return false;
+        var tt = totals();
+        var now = st.box === 'set' && curUp() ? tt.setNow : tt.giftNow;
+        var was = st.box === 'set' && curUp() ? tt.setWas : tt.giftWas;
+        var lab = btn.querySelector('span:not(.bea-add-price):not(.loading__spinner)');
+        if (lab && lab.textContent.trim() !== T.atc) lab.textContent = T.atc;
+        var pe = btn.querySelector('.bea-add-price');
+        if (!pe) { pe = document.createElement('span'); pe.className = 'bea-add-price'; btn.appendChild(pe); }
+        var html = (was > now ? '<s>' + money(was) + '</s>&nbsp;&nbsp;' : '') + money(now);
+        if (pe.innerHTML !== html) pe.innerHTML = html;
+        return true;
+      }
+      window.beaAtcDecorate = decorate;
+
+      /* Si en el carrito ya manda la oferta 1 y este producto es de la oferta 2, entra al 50 % y sin regalo (como la Function) */
+      var upsellMode = false, plainMode = false, halfBag = null, origLabel = null;
+      var TAG14 = '<svg viewBox="0 0 15 15" width="14" height="14" fill="none" stroke="#121212" stroke-width="1.125" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.875 8.375 8.375 12.875a1.25 1.25 0 0 1-1.75 0L1.875 8.125v-6.25h6.25l4.75 4.75a1.25 1.25 0 0 1 0 1.75Z"/><path d="M5.5 4.688a.813.813 0 1 1-1.625 0 .813.813 0 0 1 1.625 0Z"/></svg>';
+      (function () { var f = mainForm(); var b = f && f.querySelector('.product-form__submit span:not(.bea-add-price):not(.loading__spinner)'); if (b) origLabel = b.textContent.trim(); })();
+      /* Si en el carrito ya manda la oferta 1 (bolso de viaje), la oferta 2 no se aplica (como la Function):
+         - productos del upsell de la oferta 1 (Crossbody, Magnet, Dopp Kit) -> al 50 %, con sello y caja que lo explican
+         - el resto (Pouch, Cardholder) -> precio normal, sin regalo ni sello */
+      function checkCart() {
+        if (D.offer !== 2) return;
+        fetch('/cart.js', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (cart) {
+          var o1 = (D.o1ids || []).map(String), bag = null;
+          (cart.items || []).forEach(function (it) { var p = it.properties || {}; if (!bag && !p._bea_gift && !p._bea_gift_for && it.final_line_price > 0 && o1.indexOf(String(it.product_id)) > -1) bag = it; });
+          var isHalf = !!bag && !!D.o1up, isPlain = !!bag && !D.o1up;
+          var nb = bag ? { title: bag.product_title, img: bag.image ? bag.image + (bag.image.indexOf('?') > -1 ? '&' : '?') + 'width=200' : '' } : null;
+          var changed = isHalf !== upsellMode || isPlain !== plainMode || JSON.stringify(nb) !== JSON.stringify(halfBag);
+          upsellMode = isHalf; plainMode = isPlain; halfBag = nb;
+          if (changed) renderAll();
+        }).catch(function () {});
+      }
+      function plainButton(withHalf) {
+        var f = mainForm(); var btn = f && f.querySelector('.product-form__submit'); var mv = mainVar();
+        if (!btn) return;
+        var lab = btn.querySelector('span:not(.bea-add-price):not(.loading__spinner)'); var ol = (window.variantStrings && window.variantStrings.addToCart) || origLabel;
+        if (btn.disabled || !mv || !mv.available) return;
+        if (lab && ol && lab.textContent.trim() !== ol) lab.textContent = ol;
+        var pe = btn.querySelector('.bea-add-price');
+        if (!pe) { pe = document.createElement('span'); pe.className = 'bea-add-price'; btn.appendChild(pe); }
+        var ph = withHalf ? '<s>' + money(mv.price) + '</s>&nbsp;&nbsp;' + money(half(mv.price)) : money(mv.price); if (pe.innerHTML !== ph) pe.innerHTML = ph;
+      }
+      function shortBag() { var t = halfBag ? halfBag.title : ''; var w = t.split(' '); return w.length > 2 ? w.slice(1).join(' ') : t; }
+      function renderHalf() {
+        var bag = halfBag ? esc(halfBag.title) : '';
+        var html = '<div class="bea-half"><div class="bea-half__head">' + TAG14 + '<b>' + esc(T.halfTitle) + '</b>' + tag(T.off50, false) + '</div>' +
+          '<p class="bea-half__txt">' + T.halfBox.replace('{bag}', bag) + '</p></div>';
+        if (root.innerHTML !== html) root.innerHTML = html;
+        var host = mediaHost(); if (!host) return;
+        if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+        var seal = host.querySelector('.bea-seal');
+        if (!seal) { seal = document.createElement('div'); seal.className = 'bea-seal'; seal.setAttribute('aria-hidden', 'true'); host.appendChild(seal); }
+        var sh = '<span class="bea-seal__img">' + (halfBag && halfBag.img ? '<img src="' + esc(halfBag.img) + '" alt="">' : '') + '</span>' +
+          '<span class="bea-seal__txt"><span class="bea-seal__t1">' + TAG14 + esc(T.halfTitle.toUpperCase() + ' · ' + T.off50) + '</span>' +
+          '<span class="bea-seal__t2">' + T.halfSealLine.replace('{bag}', esc(shortBag())) + '</span></span>';
+        if (seal.innerHTML !== sh) seal.innerHTML = sh;
+        seal.style.display = '';
+        placeOverlays();
+      }
+      /* BEA · 17 nov (PDF BF 1 y 4): modo de la oferta para el resto de la ficha (precio bajo el título, «Qué incluye») */
+      var lastMode = '';
+      function pubMode(m) {
+        var mv = mainVar();
+        var O = { mode: m, was: mv ? money(mv.price) : '', now: mv ? money(m === 'half' ? half(mv.price) : mv.price) : '' };
+        var k = JSON.stringify(O); window.BEA_OFFER = O; document.documentElement.setAttribute('data-bea-offer', m);
+        if (k !== lastMode) { lastMode = k; try { document.dispatchEvent(new CustomEvent('bea:offer', { detail: O })); } catch (e) {} }
+      }
+      /* BEA · 17 nov (PDF BF 4): un solo precio tachado, el del bolso (precio de comparación); sin él, no se tacha nada */
+      function sx(w, n) { return w > n ? '<s>' + money(w) + '</s>' : ''; }
+      function renderAll() {
+        syncColors(); pubMode(plainMode ? 'plain' : upsellMode ? 'half' : 'gift');
+        var host = mediaHost(); var sealEl = host && host.querySelector('.bea-seal');
+        if (plainMode) {
+          if (root.style.display !== 'none') root.style.display = 'none'; if (sealEl && sealEl.style.display !== 'none') sealEl.style.display = 'none';
+          plainButton(false);
+          return;
+        }
+        root.style.display = '';
+        if (upsellMode) { renderHalf(); plainButton(true); return; }
+        if (sealEl) sealEl.style.display = '';
+        renderBoxes(); if (window.BEA_BF && window.BEA_BF.tick) window.BEA_BF.tick(); renderSeal(); decorate();
+      }
+      var cartRootEl = document.getElementById('CartDrawer');
+      if (cartRootEl && D.offer === 2) { var ccT; new MutationObserver(function () { clearTimeout(ccT); ccT = setTimeout(checkCart, 400); }).observe(cartRootEl, { childList: true, subtree: true }); }
+      checkCart();
+
+      /* ---------- Hojas: cambiar regalo / color del 50 % ---------- */
+      function giftItems() {
+        return gifts.map(function (p) { return { pid: p.pid, title: p.title, rec: p === defGift && gifts.length > 1, colors: p.colors, variants: p.variants }; });
+      }
+      function openGiftSheet() {
+        var g = curGift();
+        window.BeaSheet.picker({
+          title: T.sheetTitle, saveLabel: T.saveGift, t: { recommended: T.recommended, color: T.color, close: T.close },
+          items: giftItems(), pid: g.p.pid, vid: g.v.id,
+          priceHtml: function (it, v) { return '<s>' + money(v ? v.price : 0) + '</s>' + tag(T.freeGift, true); },
+          onSave: function (it, v) { st.gPid = it.pid; st.gVid = v.id; st.gUser = true; renderAll(); }
+        });
+      }
+      function openUpSheet() {
+        var u = curUp(); if (!u) return;
+        window.BeaSheet.picker({
+          title: T.chooseColor, saveLabel: T.save, t: { recommended: T.recommended, color: T.color, close: T.close },
+          items: [{ pid: u.p.pid, title: u.p.title, colors: u.p.colors, variants: u.p.variants }], pid: u.p.pid, vid: u.v.id,
+          priceHtml: function (it, v) { return '<s>' + money(v ? v.price : 0) + '</s><b>' + money(half(v ? v.price : 0)) + '</b>' + tag(T.off50, false); },
+          onSave: function (it, v) { st.uVid = v.id; st.uUser = true; renderAll(); }
+        });
+      }
+
+      root.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (act) {
+          e.preventDefault(); e.stopPropagation();
+          if (act.getAttribute('data-act') === 'gift') openGiftSheet(); else openUpSheet();
+          return;
+        }
+        var bx = e.target.closest('.bea-gi__box');
+        if (bx) { var b = bx.getAttribute('data-box'); if (b !== st.box) { st.box = b; renderBoxes(); if (window.BEA_BF && window.BEA_BF.tick) window.BEA_BF.tick(); decorate(); } }
+      });
+      root.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('bea-gi__box')) { e.preventDefault(); e.target.click(); }
+      });
+
+      /* ---------- Anadir: lo usa el submit de buy-buttons.liquid ---------- */
+      /* El descuento (Function 'bogo-jerarquia') solo deja gratis UNA linea de regalo (con la cantidad que tenga).
+         Por eso, si ya hay un regalo en el carrito, el siguiente bolso suma 1 unidad a esa misma linea (sigue gratis);
+         el cliente puede cambiarlo despues con "Change" en el carrito. Devuelve una promesa. */
+      window.beaGiftItems = function (form) {
+        if (form !== mainForm()) return null;
+        var id = mainVid(); var mv = mainVar();
+        if (!id || !mv || !mv.available) return null;
+        var qInp = form.querySelector('input[name="quantity"]');
+        var q = Math.max(1, parseInt(qInp && qInp.value, 10) || 1);
+        var g = curGift();
+        var u = curUp();
+        var giftIds = {};
+        gifts.forEach(function (p) { p.variants.forEach(function (v) { giftIds[String(v.id)] = true; }); });
+        return fetch('/cart.js', { headers: { Accept: 'application/json' } })
+          .then(function (r) { return r.json(); })
+          .catch(function () { return { items: [] }; })
+          .then(function (cart) {
+            var o1 = (D.o1ids || []).map(String), o2 = (D.o2ids || []).map(String);
+            var isGift = function (it) { var p = it.properties || {}; return !!(p._bea_gift || p._bea_gift_for || (it.final_line_price === 0 && it.original_line_price > 0 && giftIds[String(it.variant_id)])); };
+            var items0 = cart.items || [];
+            var existing = null, giftTotal = 0, hasO1 = D.offer === 1, cartO1 = false, oldGifts = {};
+            items0.forEach(function (it) {
+              if (isGift(it)) { if (!existing) existing = it; giftTotal += it.quantity; oldGifts[it.key] = 0; }
+              else if (o1.indexOf(String(it.product_id)) > -1) { hasO1 = true; cartO1 = true; }
+            });
+            /* Primer bolso de la oferta 1 con regalos de la oferta 2 en el carrito: esos bolsos pasan a 50 % y pierden su regalo.
+               Se quita ese regalo y entra el que muestra la ficha (si no, se reutilizaba el Cardholder en vez del Pouch prometido). */
+            var clearOld = D.offer === 1 && !cartO1 && giftTotal > 0;
+            if (clearOld) { existing = null; giftTotal = 0; }
+            var active = hasO1 ? o1 : o2;
+            var items = [{ id: Number(id), quantity: q }];
+            /* Si en el carrito ya manda la oferta 1, este producto (oferta 2) entra como 50 %: sin regalo */
+            if (!(D.offer === 2 && hasO1)) {
+              var qual = q;
+              items0.forEach(function (it) { if (!isGift(it) && active.indexOf(String(it.product_id)) > -1) qual += it.quantity; });
+              var gq = Math.max(0, Math.min(q, qual - giftTotal));
+              if (gq > 0) items.push(existing
+                ? { id: Number(existing.variant_id), quantity: gq, properties: existing.properties || {} }
+                : { id: Number(g.v.id), quantity: gq, properties: { _bea_gift: '1' } });
+            }
+            if (AB === 'A' && st.box === 'set' && u) items.push({ id: Number(u.v.id), quantity: 1 });
+            if (!clearOld) return items;
+            return fetch('/cart/update.js', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ updates: oldGifts }) })
+              .then(function () { return items; }, function () { return items; });
+          });
+      };
+
+      /* Test B: tras anadir, pop-up con los productos al 50 % antes del carrito */
+      window.beaAfterAdd = function (res, drawer) {
+        if (AB !== 'B' || !ups.length) return false;
+        var inCart = {};
+        return (function () {
+          var g = curGift(), mv = mainVar(), col = mv ? mv.color : '';
+          fetch('/cart.js', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }).then(function (cart) {
+            (cart.items || []).forEach(function (it) { inCart[String(it.product_id)] = true; });
+            /* Solo se ofrece al 50 % lo que la Function va a cobrar al 50 % (ver minPrice arriba) */
+            var o1s = (D.o1ids || []).map(String), o2s = (D.o2ids || []).map(String), anyO1 = false, o2Max = 0;
+            (cart.items || []).forEach(function (it) {
+              var pp = it.properties || {};
+              if (pp._bea_gift || pp._bea_gift_for || it.final_line_price === 0) return;
+              if (o1s.indexOf(String(it.product_id)) > -1) anyO1 = true;
+              if (o2s.indexOf(String(it.product_id)) > -1 && it.original_price > o2Max) o2Max = it.original_price;
+            });
+            var halfOk = function (u) { return anyO1 || minPrice(u) <= o2Max; };
+            var list = [];
+            if (setUp && !inCart[String(setUp.pid)] && halfOk(setUp)) list.push(setUp);
+            ups.forEach(function (u) { if (u !== setUp && !inCart[String(u.pid)] && halfOk(u) && list.length < 2) list.push(u); });
+            var rp = typeof window.beaCartRefresh === 'function' ? window.beaCartRefresh() : null;
+            /* Sin pop-up: abrir el carrito cuando ya esta repintado (si no, se ve vacio un instante) */
+            if (!list.length) { Promise.resolve(rp).then(function () { openDrawer(drawer); }); return; }
+            var rows = list.map(function (u) {
+              var v = bestVariant(u, col);
+              return '<div class="bea-pop__row"><span class="bea-sheet__img">' + (v.img ? '<img src="' + esc(v.img) + '" alt="">' : '') + '</span>' +
+                '<span class="bea-sheet__txt"><span class="bea-sheet__name"><span>' + esc(u.title) + '</span></span>' +
+                '<span class="bea-sheet__price"><s>' + money(v.price) + '</s><b>' + money(half(v.price)) + '</b>' + tag(T.off50, false) + '</span></span>' +
+                '<button type="button" class="bea-pop__add" data-vid="' + v.id + '">' + esc(T.add) + '</button></div>';
+            }).join('');
+            var added = T.popAdded.replace('{bag}', D.main.title).replace('{gift}', g.p.short);
+            var box = window.BeaSheet.open(
+              '<div class="bea-pop__added">' + window.BeaSheet.iconCheck + '<span>' + esc(added) + '</span></div>' +
+              '<p class="bea-pop__title">' + esc(T.popTitle) + '</p>' + rows +
+              '<button type="button" class="bea-pop__skip">' + esc(T.noThanks) + '</button>',
+              { title: '', label: T.popTitle, closeLabel: T.close });
+            box.querySelectorAll('.bea-pop__add').forEach(function (b) {
+              b.addEventListener('click', function () {
+                if (b.disabled) return;
+                b.disabled = true;
+                fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ items: [{ id: Number(b.getAttribute('data-vid')), quantity: 1 }] }) })
+                  .then(function (r) { if (!r.ok) throw new Error('add'); return r.json(); })
+                  .then(function () {
+                    b.textContent = T.added + ' ✓';
+                    var sk = box.querySelector('.bea-pop__skip'); if (sk) sk.textContent = T.goCart;
+                    if (typeof window.beaCartRefresh === 'function') window.beaCartRefresh();
+                  })
+                  .catch(function () { b.disabled = false; });
+              });
+            });
+            box.querySelector('.bea-pop__skip').addEventListener('click', function () {
+              window.BeaSheet.close();
+              var p = typeof window.beaCartRefresh === 'function' ? window.beaCartRefresh() : null;
+              (p && p.then ? p : Promise.resolve()).then(function () { openDrawer(drawer); });
+            });
+          }).catch(function () {
+            var rp2 = typeof window.beaCartRefresh === 'function' ? window.beaCartRefresh() : null;
+            Promise.resolve(rp2).then(function () { openDrawer(drawer); });
+          });
+          return true;
+        })();
+      };
+      function openDrawer(drawer) {
+        drawer = drawer || document.querySelector('cart-drawer');
+        if (!drawer) { window.location.href = (window.beaRoot || '/') + 'cart'; return; }
+        drawer.classList.remove('is-empty');
+        if (typeof drawer.open === 'function') drawer.open();
+      }
+
+      /* ---------- Cambios de variante del bolso ---------- */
+      var lastVid = mainVid();
+      function onMaybeChange() {
+        var v = mainVid();
+        if (v !== lastVid) { lastVid = v; renderAll(); } else { decorate(); }
+      }
+      document.addEventListener('change', function (e) {
+        if (e.target && e.target.closest && e.target.closest('variant-selects, variant-radios, product-info')) {
+          setTimeout(onMaybeChange, 150); setTimeout(onMaybeChange, 600);
+        }
+      });
+      var f0 = mainForm();
+      if (f0) {
+        var obs = new MutationObserver(function () { clearTimeout(obs._t); obs._t = setTimeout(onMaybeChange, 60); });
+        obs.observe(f0, { attributes: true, subtree: true, childList: true, characterData: true, attributeFilter: ['value', 'disabled'] });
+      }
+      renderAll();
+      (window.BEA_EARLY = window.BEA_EARLY || []).push(function () { renderAll(); renderSeal(); decorate(); placeOverlays(); }); /* BEA · montaje antes del primer pintado */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderAll);
+      window.addEventListener('load', function () { renderSeal(); decorate(); setTimeout(placeOverlays, 300); setTimeout(placeOverlays, 1500); });
+    })();
+  </script>
+{%- endif -%}

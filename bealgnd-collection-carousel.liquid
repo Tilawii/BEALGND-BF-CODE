@@ -1,0 +1,220 @@
+{%- liquid
+  # BEALGND · Black Friday: mismo cálculo que layout/theme.liquid
+  assign bea_bf_end = settings.bf_end | date: '%s' | plus: 0
+  assign bea_bf_now = 'now' | date: '%s' | plus: 0
+  assign bea_bf_live = false
+  if settings.bf_enabled
+    assign bea_bf_live = true
+    if settings.bf_hide_after_end and bea_bf_end > 0 and bea_bf_now >= bea_bf_end
+      assign bea_bf_live = false
+    endif
+  endif
+-%}
+{%- comment -%}
+  BEALGND · Cabecera de colección (estilo Make It Shine, node 66-2054)
+  Título + nº → Descripción (máx 2 líneas) → Fila.
+  Miniaturas + divisoria FIJAS (sticky); See all + colecciones se deslizan por detrás.
+  El • y la negrita marcan la colección ACTIVA. Sustituye al "Banner de colección".
+{%- endcomment -%}
+
+{%- style -%}
+  .bea-colhead-{{ section.id }} {
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+    font-family: "Inter", var(--font-body-family);
+    letter-spacing: -0.03em;
+  }
+
+  .bea-colhead-{{ section.id }} .bea-colhead__title {
+    margin: 0; padding: 0 24px;
+    font-family: "Inter", var(--font-body-family);
+    font-size: {{ section.settings.title_size }}px; font-weight: 700; line-height: 1.1;
+    letter-spacing: -0.03em; color: #121212;
+  }
+  .bea-colhead-{{ section.id }} .bea-colhead__count {
+    font-size: {{ section.settings.title_size | times: 0.5 | at_least: 10 }}px;
+    font-weight: 400; color: rgba(18,18,18,.5);
+    vertical-align: super; margin-left: 5px;
+  }
+
+  .bea-colhead-{{ section.id }} .bea-colhead__desc {
+    margin: 12px 0 0; padding: 0 24px;
+    font-size: {{ section.settings.desc_size }}px; line-height: 1.5;
+    letter-spacing: -0.03em; color: rgba(18,18,18,.55);
+    max-width: 680px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .bea-colhead-{{ section.id }} .bea-colhead__desc p { margin: 0; }
+
+  /* Toda la fila es deslizable */
+  .bea-colhead-{{ section.id }} .bea-colnav {
+    display: flex; align-items: center; gap: 20px;
+    overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+    margin-top: 26px; padding: 4px 24px 4px 0;
+  }
+  .bea-colhead-{{ section.id }} .bea-colnav::-webkit-scrollbar { display: none; }
+
+  /* Parte FIJA: pegada a la izquierda mientras el resto se desliza */
+  .bea-colhead-{{ section.id }} .bea-colnav__fixed {
+    position: sticky; left: 0; z-index: 2;
+    display: inline-flex; align-items: center; gap: 12px; flex: 0 0 auto;
+    padding: 0 4px 0 24px; text-decoration: none;
+    background: rgb(var(--color-background, 255 255 255));
+  }
+  .bea-colhead-{{ section.id }} .bea-colnav__thumbs { display: inline-flex; }
+  .bea-colhead-{{ section.id }} .bea-colnav__thumbs img {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+    border: 1.5px solid #fff; display: block;
+  }
+  .bea-colhead-{{ section.id }} .bea-colnav__thumbs img + img { margin-left: -12px; }
+  .bea-colhead-{{ section.id }} .bea-colnav__sep { width: 1px; height: 20px; background: rgba(18,18,18,.18); flex: 0 0 auto; }
+
+  /* Punto activo */
+  .bea-colhead-{{ section.id }} .bea-colnav__bullet { display: none; font-size: {{ section.settings.nav_size | minus: 1 }}px; color: #121212; margin-right: 6px; }
+  .bea-colhead-{{ section.id }} .is-active .bea-colnav__bullet { display: inline-block; }
+
+  /* "See all" */
+  .bea-colhead-{{ section.id }} .bea-colnav__all { flex: 0 0 auto; text-decoration: none; }
+  .bea-colhead-{{ section.id }} .bea-colnav__all-text { display: inline-flex; align-items: center; }
+  .bea-colhead-{{ section.id }} .bea-colnav__all-label {
+    font-size: {{ section.settings.nav_size }}px; letter-spacing: -0.03em; white-space: nowrap;
+    font-weight: 400; color: rgba(18,18,18,.5);
+  }
+  .bea-colhead-{{ section.id }} .bea-colnav__all.is-active .bea-colnav__all-label { font-weight: 700; color: #121212; }
+
+  /* Enlaces de colección */
+  .bea-colhead-{{ section.id }} .bea-colnav__link {
+    display: inline-flex; align-items: center; flex: 0 0 auto;
+    text-decoration: none; white-space: nowrap;
+    font-size: {{ section.settings.nav_size }}px; font-weight: 400; letter-spacing: -0.03em; color: rgba(18,18,18,.5);
+  }
+  .bea-colhead-{{ section.id }} .bea-colnav__link:hover { color: #121212; }
+  .bea-colhead-{{ section.id }} .bea-colnav__link.is-active { font-weight: 700; color: #121212; }
+{%- endstyle -%}
+
+{%- assign active_is_seeall = true -%}
+{%- for block in section.blocks -%}
+  {%- if block.settings.collection != blank and block.settings.collection.handle == collection.handle -%}
+    {%- assign active_is_seeall = false -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<div class="bea-colhead bea-colhead-{{ section.id }} color-{{ section.settings.color_scheme }}">
+
+  {%- if section.settings.show_title -%}
+    <h1 class="bea-colhead__title">
+      {%- assign bf_a_list = settings.bf_a_handles | remove: ' ' | split: ',' -%}
+        {%- if bea_bf_live and bf_a_list contains collection.handle and settings.bf_a_title != blank -%}
+          <span data-bea-bf>{{ settings.bf_a_title | escape }}</span><span data-bea-bf-off hidden>{{ collection.title | default: 'Collection' }}</span>
+        {%- else -%}
+          {{ collection.title | default: 'Collection' }}
+        {%- endif -%}
+      {%- if collection.products_count > 0 -%}
+        <sup class="bea-colhead__count">{{ collection.products_count }}</sup>
+      {%- endif -%}
+    </h1>
+  {%- endif -%}
+
+  {%- if section.settings.show_description and collection.description != blank -%}
+    <div class="bea-colhead__desc rte">{{ collection.description }}</div>
+  {%- endif -%}
+
+  {%- comment -%} BEALGND · Black Friday (Adrià, 11 nov): en las colecciones con banner rojo (A) la fila pasa a ser All products · Up to 30% · Up to 70% {%- endcomment -%}
+{%- assign bea_tab_list = settings.bf_a_handles | remove: ' ' | split: ',' -%}
+{%- assign bea_tabs = false -%}
+{%- if bea_bf_live and settings.bf_tabs and bea_tab_list contains collection.handle -%}{%- assign bea_tabs = true -%}{%- endif -%}
+{%- capture bea_orig_nav -%}<nav class="bea-colnav">
+    {%- if section.settings.show_thumbs -%}
+      <a class="bea-colnav__fixed" href="{{ section.settings.see_all_link | default: routes.all_products_collection_url }}" aria-label="{{ section.settings.see_all_text | default: 'See all' }}">
+        <span class="bea-colnav__thumbs">
+          {%- for product in collection.products limit: 2 -%}
+            {%- if product.featured_image != blank -%}
+              {{ product.featured_image | image_url: width: 80 | image_tag: loading: 'lazy', alt: '' }}
+            {%- endif -%}
+          {%- endfor -%}
+        </span>
+        <span class="bea-colnav__sep" aria-hidden="true"></span>
+      </a>
+    {%- endif -%}
+
+    {%- if section.settings.show_see_all -%}
+      <a class="bea-colnav__all{% if active_is_seeall %} is-active{% endif %}" href="{{ section.settings.see_all_link | default: routes.all_products_collection_url }}">
+        <span class="bea-colnav__all-text"><span class="bea-colnav__bullet" aria-hidden="true">•</span><span class="bea-colnav__all-label">{{ section.settings.see_all_text | default: 'See all' }}</span></span>
+      </a>
+    {%- endif -%}
+
+    {%- for block in section.blocks -%}
+      {%- assign bcol = block.settings.collection -%}
+      {%- if bcol != blank -%}
+        {%- assign is_active = false -%}
+        {%- if bcol.handle == collection.handle -%}{%- assign is_active = true -%}{%- endif -%}
+        <a class="bea-colnav__link{% if is_active %} is-active{% endif %}" href="{{ bcol.url }}" {{ block.shopify_attributes }}>
+          <span class="bea-colnav__bullet" aria-hidden="true">•</span>{{ block.settings.custom_title | default: bcol.title }}
+        </a>
+      {%- endif -%}
+    {%- endfor -%}
+  </nav>{%- endcapture -%}
+{%- if bea_tabs -%}
+<nav class="bea-colnav" data-bea-bf>
+{%- if section.settings.show_thumbs -%}
+      <a class="bea-colnav__fixed" href="{{ routes.all_products_collection_url }}" aria-label="{{ section.settings.see_all_text | default: 'See all' }}">
+        <span class="bea-colnav__thumbs">
+          {%- for product in collection.products limit: 2 -%}
+            {%- if product.featured_image != blank -%}
+              {{ product.featured_image | image_url: width: 80 | image_tag: loading: 'lazy', alt: '' }}
+            {%- endif -%}
+          {%- endfor -%}
+        </span>
+        <span class="bea-colnav__sep" aria-hidden="true"></span>
+      </a>
+    {%- endif -%}
+
+    
+<a class="bea-colnav__link{% if collection.handle == 'all' %} is-active{% endif %}" href="{{ routes.all_products_collection_url }}"><span class="bea-colnav__bullet" aria-hidden="true">•</span>{{ settings.bf_tab_all | default: 'All products' }}</a>
+{%- if settings.bf_tab_30 != blank -%}<a class="bea-colnav__link{% if collection.handle == settings.bf_tab_30.handle %} is-active{% endif %}" href="{{ settings.bf_tab_30.url }}"><span class="bea-colnav__bullet" aria-hidden="true">•</span>{{ settings.bf_tab_30_label | default: settings.bf_tab_30.title }}</a>{%- endif -%}
+{%- if settings.bf_tab_70 != blank -%}<a class="bea-colnav__link{% if collection.handle == settings.bf_tab_70.handle %} is-active{% endif %}" href="{{ settings.bf_tab_70.url }}"><span class="bea-colnav__bullet" aria-hidden="true">•</span>{{ settings.bf_tab_70_label | default: settings.bf_tab_70.title }}</a>{%- endif -%}
+</nav>
+<div data-bea-bf-off hidden>{{ bea_orig_nav }}</div>
+{%- else -%}
+{{ bea_orig_nav }}
+{%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "BEALGND · Colecciones",
+  "tag": "section",
+  "class": "bea-colhead-section",
+  "settings": [
+    { "type": "color_scheme", "id": "color_scheme", "label": "Esquema de color", "default": "scheme-1" },
+    { "type": "header", "content": "Título y descripción" },
+    { "type": "checkbox", "id": "show_title", "label": "Mostrar título + nº de productos", "default": true },
+    { "type": "range", "id": "title_size", "min": 12, "max": 40, "step": 1, "unit": "px", "label": "Tamaño del título", "default": 26 },
+    { "type": "checkbox", "id": "show_description", "label": "Mostrar descripción (máx. 2 líneas)", "default": true },
+    { "type": "range", "id": "desc_size", "min": 10, "max": 18, "step": 1, "unit": "px", "label": "Tamaño de la descripción", "default": 13 },
+    { "type": "header", "content": "Fila de colecciones" },
+    { "type": "range", "id": "nav_size", "min": 10, "max": 18, "step": 1, "unit": "px", "label": "Tamaño de los textos", "default": 14 },
+    { "type": "checkbox", "id": "show_see_all", "label": "Mostrar \"See all\"", "default": true },
+    { "type": "checkbox", "id": "show_thumbs", "label": "Mostrar miniaturas + separador (fijos)", "default": true },
+    { "type": "text", "id": "see_all_text", "label": "Texto \"See all\"", "default": "See all" },
+    { "type": "url", "id": "see_all_link", "label": "Enlace (por defecto: todos los productos)" },
+    { "type": "header", "content": "Espaciado" },
+    { "type": "range", "id": "padding_top", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Espacio arriba", "default": 16 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Espacio abajo", "default": 12 }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Colección",
+      "settings": [
+        { "type": "collection", "id": "collection", "label": "Colección" },
+        { "type": "image_picker", "id": "image", "label": "Imagen (opcional)" },
+        { "type": "text", "id": "custom_title", "label": "Título personalizado (opcional)" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "BEALGND · Colecciones", "blocks": [ { "type": "collection" }, { "type": "collection" }, { "type": "collection" } ] }
+  ]
+}
+{% endschema %}

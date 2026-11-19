@@ -1,0 +1,90 @@
+{%- comment -%}
+  bea-product-sizes.liquid  ·  BEALGND  (v3: cabecera con CSS puro -> cero salto)
+  Reestiliza el selector de TALLA de Dawn como texto minimalista (estilo Make It Shine).
+  "Select your size" se pinta con ::before (CSS), asi que no depende de JS y NO se mueve
+  al cambiar de variante. El "Size guide" (si existe pagina 'size-guide') va en absoluto.
+      {%- render 'bea-product-sizes' -%}
+  El fieldset de color lleva la clase .bea-sw (swatches); por eso usamos :not(.bea-sw).
+{%- endcomment -%}
+
+<style>
+  .product-form__input--pill:not(.bea-sw){
+    position:relative;
+    display:block !important;
+    border:0 !important;
+    padding:24px 0 0 !important;
+    margin:18px 0 0 !important;
+  }
+  .product-form__input--pill:not(.bea-sw) > legend{display:none !important;}
+
+  /* Cabecera "Select your size" con CSS puro (siempre presente, no se mueve) */
+  .product-form__input--pill:not(.bea-sw)::before{
+    content:"Select your size";
+    position:absolute;top:0;left:0;
+    font-family:'Inter',sans-serif;font-size:11px;font-weight:500;
+    letter-spacing:-.03em;color:#121212;line-height:1;
+  }
+  /* Size guide (inyectado por JS, en absoluto arriba a la derecha) */
+  .bea-size__guide{
+    position:absolute;top:0;right:0;
+    font-family:'Inter',sans-serif;font-size:11px;font-weight:400;
+    letter-spacing:-.03em;color:rgba(18,18,18,.55);
+    text-decoration:underline;text-underline-offset:2px;white-space:nowrap;
+  }
+  .bea-size__guide:hover{color:#121212;}
+
+  /* Tallas como texto minimalista */
+  .product-form__input--pill:not(.bea-sw) label{
+    display:inline-block !important;
+    border:0 !important;background:transparent !important;box-shadow:none !important;
+    padding:0 !important;margin:0 20px 0 0 !important;
+    min-width:0 !important;width:auto !important;height:auto !important;line-height:1 !important;
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:400;letter-spacing:-.03em;
+    color:rgba(18,18,18,.5);cursor:pointer;
+  }
+  .product-form__input--pill:not(.bea-sw) input:checked + label{
+    color:#121212 !important;background:transparent !important;
+    text-decoration:underline;text-underline-offset:3px;
+  }
+  .product-form__input--pill:not(.bea-sw) input:disabled + label,
+  .product-form__input--pill:not(.bea-sw) label.disabled{
+    opacity:.35;text-decoration:line-through;
+  }
+</style>
+
+<script>
+(function () {
+  var GUIDE = {{ pages['size-guide'].url | default: '' | json }};
+  if (!GUIDE) return; /* sin pagina size-guide no hay nada que inyectar */
+
+  function init(root) {
+    root = root || document;
+    var vs = root.querySelector('variant-selects');
+    if (!vs) return;
+    var syn = /^(size|talla|tallas|taille|gr(o|ö)sse|gr(o|ö)ße)\b/i;
+    var sets = vs.querySelectorAll('fieldset.product-form__input');
+    var fs = null;
+    Array.prototype.forEach.call(sets, function (s) {
+      if (s.classList.contains('bea-sw')) return;
+      var lg = s.querySelector('legend');
+      var t = lg ? (lg.textContent || '').trim().toLowerCase() : '';
+      if (syn.test(t)) fs = s;
+    });
+    if (!fs || fs.querySelector('.bea-size__guide')) return;
+    var a = document.createElement('a');
+    a.className = 'bea-size__guide';
+    a.href = GUIDE;
+    a.textContent = 'Size guide';
+    fs.appendChild(a);
+  }
+
+  function boot() { init(document); }
+  (window.BEA_EARLY = window.BEA_EARLY || []).push(boot); /* BEA · montaje antes del primer pintado */
+if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+
+  var host = document.querySelector('product-info') || document.body;
+  new MutationObserver(function () { init(document); }).observe(host, { childList: true, subtree: true });
+  document.addEventListener('shopify:section:load', boot);
+})();
+</script>

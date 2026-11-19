@@ -1,0 +1,60 @@
+{%- comment -%} BEALGND · Black Friday Early Access · Cintas cruzadas sobre el corte negro/blanco {%- endcomment -%}
+<style>
+  .bea-bf-ticker { position: relative; height: 110px; overflow: hidden; background: linear-gradient(180deg, #000 0 50%, #fff 50% 100%); }
+  .bea-bf-ticker__strip { position: absolute; left: -15.4%; width: 153.8%; display: flex; align-items: center; gap: 14px; padding: 9px 14px; white-space: nowrap; overflow: hidden; transform-origin: 0 0; }
+  .bea-bf-ticker__strip--a { top: 40px; background: #fff; color: #121212; transform: rotate(-3deg); }
+  .bea-bf-ticker__strip--b { top: 44px; background: #E8262B; color: #fff; transform: rotate(3deg); }
+  .bea-bf-ticker__big { font-size: 18px; font-weight: 900; letter-spacing: -.03em; line-height: 1.2; }
+  .bea-bf-ticker__small { font-size: 14px; font-weight: 700; letter-spacing: -.03em; line-height: 1.2; }
+  .bea-bf-ticker__dot { font-size: 7px; line-height: 1; }
+  .bea-bf-ticker__track { display: flex; align-items: center; gap: 14px; flex: none; animation: bea-bf-marquee 40s linear infinite; }
+  .bea-bf-ticker__strip--b .bea-bf-ticker__track { animation-direction: reverse; }
+  @keyframes bea-bf-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .bea-bf-ticker.is-static .bea-bf-ticker__track { animation: none; }
+  @media (prefers-reduced-motion: reduce) { .bea-bf-ticker__track { animation: none; } }
+  @media screen and (min-width: 990px) {
+    .bea-bf-ticker { height: 140px; }
+    .bea-bf-ticker__strip { left: -12.5%; width: 125%; gap: 22px; padding: 12px 20px; }
+    .bea-bf-ticker__strip--a { top: 48px; transform: rotate(-1.6deg); }
+    .bea-bf-ticker__strip--b { top: 52px; transform: rotate(1.6deg); }
+    .bea-bf-ticker__track { gap: 22px; }
+    .bea-bf-ticker__big { font-size: 24px; }
+    .bea-bf-ticker__small { font-size: 18px; }
+    .bea-bf-ticker__dot { font-size: 8px; }
+  }
+</style>
+
+{%- capture strip_a -%}
+  <span class="bea-bf-ticker__big">{{ section.settings.a_big }}</span><span class="bea-bf-ticker__dot">●</span>
+  <span class="bea-bf-ticker__small">{{ section.settings.a_small }}</span><span class="bea-bf-ticker__dot">●</span>
+{%- endcapture -%}
+{%- capture strip_b -%}
+  <span class="bea-bf-ticker__big">{{ section.settings.b_big }}</span><span class="bea-bf-ticker__dot">●</span>
+  <span class="bea-bf-ticker__small">{{ section.settings.b_small }}</span><span class="bea-bf-ticker__dot">●</span>
+{%- endcapture -%}
+
+<div class="bea-bf bea-bf-landing bea-bf-ticker{% unless section.settings.animate %} is-static{% endunless %}" aria-hidden="true">
+  <div class="bea-bf-ticker__strip bea-bf-ticker__strip--a">
+    <div class="bea-bf-ticker__track">{% for i in (1..16) %}{{ strip_a }}{% endfor %}</div>
+  </div>
+  <div class="bea-bf-ticker__strip bea-bf-ticker__strip--b">
+    <div class="bea-bf-ticker__track">{% for i in (1..16) %}{{ strip_b }}{% endfor %}</div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "BF · Cintas",
+  "tag": "div",
+  "settings": [
+    { "type": "checkbox", "id": "animate", "label": "Mover las cintas", "default": true },
+    { "type": "header", "content": "Cinta blanca" },
+    { "type": "text", "id": "a_big", "label": "Texto grande", "default": "UP TO 70% OFF" },
+    { "type": "text", "id": "a_small", "label": "Texto pequeño", "default": "VIP EARLY ACCESS" },
+    { "type": "header", "content": "Cinta roja" },
+    { "type": "text", "id": "b_big", "label": "Texto grande", "default": "BLACK FRIDAY 11/11" },
+    { "type": "text", "id": "b_small", "label": "Texto pequeño", "default": "UP TO 70% OFF" }
+  ],
+  "presets": [{ "name": "BF · Cintas" }]
+}
+{% endschema %}

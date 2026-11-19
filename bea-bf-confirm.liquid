@@ -1,0 +1,135 @@
+{%- comment -%}
+  BEALGND · Black Friday Early Access · Confirmación ("You're on the list")
+  Oculta por defecto. Se muestra cuando la sección del hero añade "bf-joined" a <html>
+  (al apuntarse) o con ?joined=1 en la URL.
+{%- endcomment -%}
+<style>
+  .bea-bf-ok { display: none; background: #fff; }
+  html.bf-joined .bea-bf-ok { display: block; }
+  .bea-bf-ok__main { padding: 44px 20px 36px; }
+  .bea-bf-ok__col { display: flex; flex-direction: column; gap: 16px; }
+  .bea-bf-ok__check { width: 56px; height: 56px; display: block; }
+  .bea-bf-ok__chip { align-self: flex-start; padding: 6px 10px; border-radius: 40px; border: 1px solid #D9D9D9; color: #6B6B6B;
+    font-size: 10px; font-weight: 600; letter-spacing: .10em; text-transform: uppercase; line-height: 1.2; }
+  .bea-bf-ok__title { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: #121212; font-family: var(--font-body-family); }
+  .bea-bf-ok__sub { margin: 0; font-size: 15px; line-height: 1.4; color: #6B6B6B; }
+  .bea-bf-ok__cdlab { font-size: 10px; font-weight: 600; letter-spacing: .10em; text-transform: uppercase; color: #8C8C8C; margin: 4px 0 8px; }
+  .bea-bf-ok__cd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .bea-bf-ok__box { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: #F3F3F3; border-radius: 8px; }
+  .bea-bf-ok__num { font-size: 24px; font-weight: 700; line-height: 1.2; color: #121212; font-variant-numeric: tabular-nums; }
+  .bea-bf-ok__lab { font-size: 9px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #8C8C8C; line-height: 1.2; }
+  .bea-bf-ok__btns { display: flex; flex-direction: column; gap: 16px; }
+  .bea-bf-ok__btn { display: flex; align-items: center; justify-content: center; border-radius: 40px; padding: 17px 16px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; line-height: 1.2; border: 1px solid #121212; }
+  .bea-bf-ok__btn--dark { background: #121212; color: #fff; }
+  .bea-bf-ok__btn--line { background: #fff; color: #121212; padding: 16px; }
+  .bea-bf-ok__tip { background: #F6F6F6; padding: 24px 20px 28px; }
+  .bea-bf-ok__tipt { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: #121212; line-height: 1.3; }
+  .bea-bf-ok__tipp { margin: 0; font-size: 13px; line-height: 1.4; color: #6B6B6B; }
+  @media screen and (min-width: 990px) {
+    .bea-bf-ok__main { padding: 120px 20px; }
+    .bea-bf-ok__col { width: 540px; margin: 0 auto; gap: 20px; }
+    .bea-bf-ok__check { width: 64px; height: 64px; }
+    .bea-bf-ok__chip { padding: 6px 12px; font-size: 11px; }
+    .bea-bf-ok__title { font-size: 52px; }
+    .bea-bf-ok__sub { font-size: 18px; }
+    .bea-bf-ok__cdlab { font-size: 11px; }
+    .bea-bf-ok__box { padding: 14px 0 12px; border-radius: 10px; }
+    .bea-bf-ok__num { font-size: 30px; }
+    .bea-bf-ok__lab { font-size: 10px; }
+    .bea-bf-ok__btns { flex-direction: row; gap: 12px; padding-top: 4px; }
+    .bea-bf-ok__btn { flex: 1; padding: 18px 16px; }
+    .bea-bf-ok__btn--line { padding: 17px 16px; }
+    .bea-bf-ok__tip { border-radius: 14px; padding: 20px 22px 22px; }
+    .bea-bf-ok__tipp { font-size: 14px; }
+    .bea-bf-ok__tip--mobile { display: none; }
+  }
+  @media screen and (max-width: 989px) { .bea-bf-ok__tip--desktop { display: none; } }
+</style>
+
+{%- capture bf_tip -%}
+  <p class="bea-bf-ok__tipt">{{ section.settings.tip_title }}</p>
+  <p class="bea-bf-ok__tipp">{{ section.settings.tip_text }}</p>
+{%- endcapture -%}
+
+<section class="bea-bf bea-bf-ok" id="bf-ok-{{ section.id }}" aria-live="polite">
+  <div class="bea-bf-ok__main">
+    <div class="bea-bf-ok__col">
+      <svg class="bea-bf-ok__check" viewBox="0 0 56 56" fill="none" aria-hidden="true"><circle cx="28" cy="28" r="27" stroke="#121212" stroke-width="2"/><path d="M17 29l7 7 15-16" stroke="#121212" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bea-bf-ok__chip">{{ section.settings.chip }}</span>
+      <h2 class="bea-bf-ok__title">{{ section.settings.title }}</h2>
+      <p class="bea-bf-ok__sub">{{ section.settings.text }}</p>
+      <div>
+        <p class="bea-bf-ok__cdlab">{{ section.settings.cd_label }}</p>
+        <div class="bea-bf-ok__cd" data-bf-countdown="{{ section.settings.countdown_end | escape }}">
+          <div class="bea-bf-ok__box"><span class="bea-bf-ok__num" data-unit="d">00</span><span class="bea-bf-ok__lab">{{ section.settings.cd_days }}</span></div>
+          <div class="bea-bf-ok__box"><span class="bea-bf-ok__num" data-unit="h">00</span><span class="bea-bf-ok__lab">{{ section.settings.cd_hours }}</span></div>
+          <div class="bea-bf-ok__box"><span class="bea-bf-ok__num" data-unit="m">00</span><span class="bea-bf-ok__lab">{{ section.settings.cd_minutes }}</span></div>
+          <div class="bea-bf-ok__box"><span class="bea-bf-ok__num" data-unit="s">00</span><span class="bea-bf-ok__lab">{{ section.settings.cd_seconds }}</span></div>
+        </div>
+      </div>
+      <div class="bea-bf-ok__btns">
+        <button type="button" class="bea-bf-ok__btn bea-bf-ok__btn--dark" data-bf-ics>{{ section.settings.cal_button }}</button>
+        <a class="bea-bf-ok__btn bea-bf-ok__btn--line" href="{{ section.settings.social_url }}" target="_blank" rel="noopener">{{ section.settings.social_button }}</a>
+      </div>
+      <div class="bea-bf-ok__tip bea-bf-ok__tip--desktop">{{ bf_tip }}</div>
+    </div>
+  </div>
+  <div class="bea-bf-ok__tip bea-bf-ok__tip--mobile">{{ bf_tip }}</div>
+</section>
+
+<script>
+  (function () {
+    var s = document.getElementById('bf-ok-{{ section.id }}'); if (!s) return;
+    var btn = s.querySelector('[data-bf-ics]');
+    var start = Date.parse({{ section.settings.countdown_end | json }});
+    function fmt(t) { return new Date(t).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+    btn.addEventListener('click', function () {
+      if (isNaN(start)) return;
+      var ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//BEALGND//BF Early Access//EN', 'BEGIN:VEVENT',
+        'UID:bf-early-access-2026@bealgnd.com', 'DTSTAMP:' + fmt(Date.now()),
+        'DTSTART:' + fmt(start), 'DTEND:' + fmt(start + 3600000),
+        'SUMMARY:' + {{ section.settings.cal_title | json }},
+        'DESCRIPTION:' + {{ section.settings.cal_text | json }} + ' ' + location.origin + location.pathname,
+        'URL:' + location.origin + location.pathname,
+        'BEGIN:VALARM', 'TRIGGER:-PT15M', 'ACTION:DISPLAY', 'DESCRIPTION:' + {{ section.settings.cal_title | json }}, 'END:VALARM',
+        'END:VEVENT', 'END:VCALENDAR'
+      ].join('\r\n');
+      var url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+      var a = document.createElement('a'); a.href = url; a.download = 'bealgnd-black-friday.ics';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "BF · Confirmación",
+  "tag": "div",
+  "settings": [
+    { "type": "paragraph", "content": "Solo se ve después de apuntarse. Para revisarla, añade ?joined=1 a la URL de la página." },
+    { "type": "text", "id": "chip", "label": "Etiqueta", "default": "Black Friday 2026 · Early Access" },
+    { "type": "text", "id": "title", "label": "Título", "default": "You’re on the list." },
+    { "type": "textarea", "id": "text", "label": "Texto", "default": "We’ll email you the moment early access opens on 11 November. Up to 70% off, before everyone else." },
+    { "type": "header", "content": "Cuenta atrás" },
+    { "type": "text", "id": "countdown_end", "label": "Fecha y hora de inicio (ISO, hora de Madrid)", "default": "2026-11-11T00:00:00+01:00", "info": "Debe coincidir con la del hero" },
+    { "type": "text", "id": "cd_label", "label": "Texto encima", "default": "Early access opens in" },
+    { "type": "text", "id": "cd_days", "label": "Días", "default": "Days" },
+    { "type": "text", "id": "cd_hours", "label": "Horas", "default": "Hours" },
+    { "type": "text", "id": "cd_minutes", "label": "Minutos", "default": "Min" },
+    { "type": "text", "id": "cd_seconds", "label": "Segundos", "default": "Sec" },
+    { "type": "header", "content": "Botones" },
+    { "type": "text", "id": "cal_button", "label": "Botón calendario", "default": "Add 11 Nov to my calendar" },
+    { "type": "text", "id": "cal_title", "label": "Calendario · título del evento", "default": "BEALGND Black Friday · Early Access" },
+    { "type": "text", "id": "cal_text", "label": "Calendario · descripción", "default": "Up to 70% off, only for the VIP list." },
+    { "type": "text", "id": "social_button", "label": "Botón redes", "default": "Follow @bealgnd" },
+    { "type": "url", "id": "social_url", "label": "Enlace redes" },
+    { "type": "header", "content": "Aviso" },
+    { "type": "text", "id": "tip_title", "label": "Título", "default": "Can’t find our email?" },
+    { "type": "textarea", "id": "tip_text", "label": "Texto", "default": "Check your Promotions or Spam folder and move us to your inbox, so you don’t miss 11 November." }
+  ],
+  "presets": [{ "name": "BF · Confirmación" }]
+}
+{% endschema %}

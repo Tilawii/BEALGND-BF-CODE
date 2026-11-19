@@ -1,0 +1,29 @@
+{%- comment -%}
+bea-ficha-relacionados.liquid · BEALGND · Ficha nueva (nov 2026)
+«You will like also» como sección propia, para que vaya al final de la ficha (después de historia,
+qué incluye y reseñas). Reutiliza el mismo snippet de siempre (bea-related), sin cambios.
+{%- endcomment -%}
+<div class="page-width" style="padding-bottom:20px;">
+  {%- render 'bea-related', block: section, product: product -%}
+  <style id="bea-ficha-rel-desk">
+    @media (min-width:990px){
+      .bea-ficha-relacionados .bea-rel__row{grid-template-columns:repeat(4,1fr) !important;gap:16px !important;}
+      .bea-ficha-relacionados .bea-rel__row > :nth-child(n+5){display:none !important;}
+      .bea-ficha-relacionados .bea-rel{margin-top:48px !important;}
+    }
+  </style>
+</div>
+
+{% schema %}
+{
+  "name": "BEA · You will like also",
+  "tag": "section",
+  "class": "section bea-ficha-relacionados",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "YOU WILL LIKE ALSO" },
+    { "type": "range", "id": "limit", "label": "Productos", "min": 2, "max": 6, "step": 1, "default": 6 }
+  ],
+  "presets": [{ "name": "BEA · You will like also" }]
+}
+{% endschema %}

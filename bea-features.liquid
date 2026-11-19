@@ -1,0 +1,70 @@
+{%- comment -%}
+  bea-features.liquid  ·  BEALGND
+  Lista de features editable. Se renderiza como BLOQUE desde main-product.liquid:
+      {%- when 'bea_features' -%}
+        {%- render 'bea-features', block: block, product: product -%}
+  Necesita tambien el snippet 'bea-icon.liquid'.
+
+  POR PRODUCTO (metafields, con respaldo del bloque):
+      Texto:  custom.feature_1 ... custom.feature_5        (Linea de texto simple)
+      Icono:  custom.feature_1_icon ... custom.feature_5_icon (Linea de texto, lista de valores)
+  El TAMANO y el estado de STOCK se controlan desde el bloque.
+{%- endcomment -%}
+
+{%- liquid
+  assign s = block.settings
+  assign fs = s.text_size | default: 12
+  assign gap = 3
+  assign icbox = fs | plus: 2
+  assign icsvg = fs | plus: 1
+  assign in_stock = product.available
+
+  assign t1 = product.metafields.custom.feature_1.value | default: s.text_1
+  assign t2 = product.metafields.custom.feature_2.value | default: s.text_2
+  assign t3 = product.metafields.custom.feature_3.value | default: s.text_3
+  assign t4 = product.metafields.custom.feature_4.value | default: s.text_4
+  assign t5 = product.metafields.custom.feature_5.value | default: s.text_5
+
+  assign i1 = product.metafields.custom.feature_1_icono.value | default: s.icon_1
+  assign i2 = product.metafields.custom.feature_2_icono.value | default: s.icon_2
+  assign i3 = product.metafields.custom.feature_3_icono.value | default: s.icon_3
+  assign i4 = product.metafields.custom.feature_4_icono.value | default: s.icon_4
+  assign i5 = product.metafields.custom.feature_5_icono.value | default: s.icon_5
+-%}
+
+<div id="bea-feat-{{ block.id }}" class="bea-feats" {{ block.shopify_attributes }}>
+  <style>
+    #bea-feat-{{ block.id }}{margin-top:16px;display:flex;flex-direction:column;gap:{{ gap }}px;font-family:'Inter',sans-serif;}
+    #bea-feat-{{ block.id }} .bea-feats__row{display:flex;align-items:center;gap:6px;}
+    #bea-feat-{{ block.id }} .bea-feats__ic{width:{{ icbox }}px;height:{{ icbox }}px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#121212;}
+    #bea-feat-{{ block.id }} .bea-feats__ic svg{width:{{ icsvg }}px;height:{{ icsvg }}px;display:block;}
+    #bea-feat-{{ block.id }} .bea-feats__tx{font-size:{{ fs }}px;font-weight:400;line-height:normal;letter-spacing:-.05em;color:#121212;}
+  </style>
+
+  {%- if s.show_stock -%}
+    <div class="bea-feats__row">
+      <span class="bea-feats__ic">
+        {%- if in_stock -%}{%- render 'bea-icon', key: 'dot', color: '#35b34a' -%}
+        {%- else -%}{%- render 'bea-icon', key: 'dot', color: '#bfbfbf' -%}{%- endif -%}
+      </span>
+      <span class="bea-feats__tx">{%- if in_stock -%}{{ s.stock_in_label | default: 'In stock' }}{%- else -%}{{ s.stock_out_label | default: 'Out of stock' }}{%- endif -%}</span>
+    </div>
+  {%- endif -%}
+
+  {%- if t1 != blank -%}
+    <div class="bea-feats__row"><span class="bea-feats__ic">{%- render 'bea-icon', key: i1 -%}</span><span class="bea-feats__tx">{{ t1 }}</span></div>
+  {%- endif -%}
+  {%- if t2 != blank -%}
+    <div class="bea-feats__row"><span class="bea-feats__ic">{%- render 'bea-icon', key: i2 -%}</span><span class="bea-feats__tx">{{ t2 }}</span></div>
+  {%- endif -%}
+  {%- if t3 != blank -%}
+    <div class="bea-feats__row"><span class="bea-feats__ic">{%- render 'bea-icon', key: i3 -%}</span><span class="bea-feats__tx">{{ t3 }}</span></div>
+  {%- endif -%}
+  {%- if t4 != blank -%}
+    <div class="bea-feats__row"><span class="bea-feats__ic">{%- render 'bea-icon', key: i4 -%}</span><span class="bea-feats__tx">{{ t4 }}</span></div>
+  {%- endif -%}
+  {%- if t5 != blank -%}
+    <div class="bea-feats__row"><span class="bea-feats__ic">{%- render 'bea-icon', key: i5 -%}</span><span class="bea-feats__tx">{{ t5 }}</span></div>
+  {%- endif -%}
+
+</div>

@@ -1,0 +1,23 @@
+{%- comment -%}
+  bea-recently-card.liquid  ·  BEALGND  (SECCION auxiliar)
+  Renderiza UNA tarjeta card-product para inyectarla por AJAX en "Suggested"
+  (vistos recientemente). Se pide con:
+      /products/{handle}?section_id=bea-recently-card
+  No se anade a ninguna plantilla; solo se usa por render de seccion.
+{%- endcomment -%}
+{%- if product and product != empty -%}
+  <div class="bea-rel__cell" data-handle="{{ product.handle }}">
+    {%- render 'card-product',
+      card_product: product,
+      media_aspect_ratio: 'portrait',
+      quick_add: 'standard',
+      section_id: 'bearecent',
+      lazy_load: true,
+      skip_styles: true
+    -%}
+    <div class="bea-rel__price">{{ product.price | money }}</div>
+  </div>
+{%- endif -%}
+{% schema %}
+{ "name": "BEA recently card" }
+{% endschema %}

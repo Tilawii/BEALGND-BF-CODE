@@ -1,0 +1,206 @@
+{%- comment -%}
+  BEALGND · selector país/idioma para el footer (estilo Figma)
+  Botón con banderita que abre un panel. Bandera vía flagcdn (imagen redonda por código de país).
+
+  v2: 
+   - Etiqueta del botón sin el código de idioma conflictivo ("ES" pegado a la bandera US).
+     Ahora: [bandera] {MONEDA ISO} · {Idioma}   (la bandera ya indica el país).
+   - Países prioritarios (US, ES, FR + el país actual) fijados arriba; el resto debajo.
+   - Buscador para filtrar la lista larga de países.
+   >>> Para cambiar los países prioritarios: edita 'US,ES,FR' en priority_codes, abajo.
+{%- endcomment -%}
+
+{%- if localization.available_countries.size > 1 or localization.available_languages.size > 1 -%}
+  {%- assign cc = localization.country.iso_code | downcase -%}
+  {%- assign cur = localization.country.iso_code -%}
+  {%- assign priority_codes = 'US,ES,FR' | split: ',' -%}
+  <div class="bea-loc">
+    {%- form 'localization', id: 'BeaLocForm', class: 'bea-loc__form' -%}
+      <bea-locale>
+        <button type="button" class="bea-loc__toggle" aria-expanded="false" aria-controls="BeaLocPanel">
+          <img class="bea-loc__flag" src="https://flagcdn.com/w40/{{ cc }}.png" alt="" width="20" height="20" loading="lazy">
+          <span class="bea-loc__current">
+            {%- if localization.available_countries.size > 1 -%}<span class="bea-loc__cur-code">{{ localization.country.currency.iso_code }}</span>{%- endif -%}
+            {%- if localization.available_countries.size > 1 and localization.available_languages.size > 1 -%}<span class="bea-loc__sep">·</span>{%- endif -%}
+            {%- if localization.available_languages.size > 1 -%}<span class="bea-loc__lang">{{ localization.language.endonym_name | capitalize }}</span>{%- endif -%}
+          </span>
+          <svg class="bea-loc__caret" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="bea-loc__panel" id="BeaLocPanel" hidden>
+          {%- if localization.available_countries.size > 1 -%}
+            <p class="bea-loc__group-label">{{ 'localization.country_label' | t | default: 'Country / Region' }}</p>
+
+            {%- if localization.available_countries.size > 8 -%}
+              <div class="bea-loc__search">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <input type="search" autocomplete="off" placeholder="{{ 'bealgnd.loc.search' | t | default: 'Search…' }}">
+              </div>
+            {%- endif -%}
+
+            <ul class="bea-loc__list">
+              {%- comment -%} 1) prioritarios (mercados clave) + país actual, arriba {%- endcomment -%}
+              {%- for country in localization.available_countries -%}
+                {%- if priority_codes contains country.iso_code or country.iso_code == cur -%}
+                  {%- assign ccc = country.iso_code | downcase -%}
+                  <li class="bea-loc__country-item" data-name="{{ country.name | downcase | escape }}">
+                    <button type="button" class="bea-loc__opt{% if country.iso_code == localization.country.iso_code %} is-active{% endif %}" data-value="{{ country.iso_code }}" data-field="country_code">
+                      <img class="bea-loc__flag" src="https://flagcdn.com/w40/{{ ccc }}.png" alt="" width="20" height="20" loading="lazy">
+                      <span>{{ country.name }} <span class="bea-loc__cur">({{ country.currency.iso_code }} {{ country.currency.symbol }})</span></span>
+                    </button>
+                  </li>
+                {%- endif -%}
+              {%- endfor -%}
+
+              <li class="bea-loc__divider" aria-hidden="true"></li>
+
+              {%- comment -%} 2) resto de países {%- endcomment -%}
+              {%- for country in localization.available_countries -%}
+                {%- unless priority_codes contains country.iso_code or country.iso_code == cur -%}
+                  {%- assign ccc = country.iso_code | downcase -%}
+                  <li class="bea-loc__country-item" data-name="{{ country.name | downcase | escape }}">
+                    <button type="button" class="bea-loc__opt{% if country.iso_code == localization.country.iso_code %} is-active{% endif %}" data-value="{{ country.iso_code }}" data-field="country_code">
+                      <img class="bea-loc__flag" src="https://flagcdn.com/w40/{{ ccc }}.png" alt="" width="20" height="20" loading="lazy">
+                      <span>{{ country.name }} <span class="bea-loc__cur">({{ country.currency.iso_code }} {{ country.currency.symbol }})</span></span>
+                    </button>
+                  </li>
+                {%- endunless -%}
+              {%- endfor -%}
+            </ul>
+
+            <p class="bea-loc__empty" hidden>{{ 'bealgnd.loc.no_results' | t | default: 'No results' }}</p>
+          {%- endif -%}
+
+          {%- if localization.available_languages.size > 1 -%}
+            <p class="bea-loc__group-label">{{ 'localization.language_label' | t | default: 'Language' }}</p>
+            <ul class="bea-loc__list bea-loc__list--lang">
+              {%- for language in localization.available_languages -%}
+                <li>
+                  <button type="button" class="bea-loc__opt{% if language.iso_code == localization.language.iso_code %} is-active{% endif %}" data-value="{{ language.iso_code }}" data-field="locale_code">
+                    <span>{{ language.endonym_name | capitalize }}</span>
+                  </button>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+        </div>
+
+        <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
+        <input type="hidden" name="locale_code" value="{{ localization.language.iso_code }}">
+      </bea-locale>
+    {%- endform -%}
+  </div>
+
+  <style>
+    .bea-loc { position: relative; }
+    .bea-loc__form { margin: 0; }
+    .bea-loc__toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; border: 0; cursor: pointer; padding: 4px 2px;
+      font-family: "Inter", sans-serif; font-size: 12px; letter-spacing: -0.03em; color: #121212;
+    }
+    .bea-loc__current { display: inline-flex; align-items: center; gap: 5px; }
+    .bea-loc__cur-code { font-weight: 500; }
+    .bea-loc__sep { color: rgba(18,18,18,.4); }
+    .bea-loc__flag {
+      width: 20px; height: 20px; border-radius: 50%; object-fit: cover;
+      flex: 0 0 20px; display: block;
+    }
+    .bea-loc__caret { width: 11px; height: 8px; margin-left: 2px; color: #121212; }
+    .bea-loc__panel {
+      position: absolute; right: 0; bottom: calc(100% + 8px);
+      background: #fff; border: 1px solid rgba(18,18,18,.12); border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.12);
+      padding: 10px; min-width: 250px; max-height: 340px; overflow-y: auto; z-index: 20;
+    }
+    .bea-loc__group-label {
+      font-family: "Inter", sans-serif; font-size: 10px; font-weight: 600;
+      letter-spacing: -0.02em; text-transform: uppercase; color: rgba(18,18,18,.45);
+      margin: 6px 6px 4px;
+    }
+    .bea-loc__search {
+      position: relative; display: flex; align-items: center; margin: 0 2px 8px;
+    }
+    .bea-loc__search svg {
+      position: absolute; left: 9px; width: 15px; height: 15px; color: rgba(18,18,18,.4); pointer-events: none;
+    }
+    .bea-loc__search input {
+      width: 100%; box-sizing: border-box; padding: 8px 10px 8px 30px;
+      border: 1px solid rgba(18,18,18,.15); border-radius: 7px; background: #fff;
+      font-family: "Inter", sans-serif; font-size: 13px; letter-spacing: -0.03em; color: #121212;
+    }
+    .bea-loc__search input:focus { outline: none; border-color: #121212; }
+    .bea-loc__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+    .bea-loc__list { list-style: none; margin: 0 0 6px; padding: 0; }
+    .bea-loc__divider { height: 1px; background: rgba(18,18,18,.08); margin: 6px 6px; }
+    .bea-loc__opt {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      background: transparent; border: 0; cursor: pointer; text-align: left;
+      padding: 8px 6px; border-radius: 7px;
+      font-family: "Inter", sans-serif; font-size: 13px; letter-spacing: -0.03em; color: #121212;
+    }
+    .bea-loc__opt:hover { background: rgba(18,18,18,.05); }
+    .bea-loc__opt.is-active { font-weight: 600; }
+    .bea-loc__cur { color: rgba(18,18,18,.45); }
+    .bea-loc__empty { font-family: "Inter", sans-serif; font-size: 12px; color: rgba(18,18,18,.45); margin: 4px 8px 8px; }
+  </style>
+
+  <script>
+    if (!customElements.get('bea-locale')) {
+      customElements.define('bea-locale', class extends HTMLElement {
+        connectedCallback() {
+          this.toggle = this.querySelector('.bea-loc__toggle');
+          this.panel = this.querySelector('.bea-loc__panel');
+          this.form = this.closest('form');
+          this.search = this.querySelector('.bea-loc__search input');
+          this.divider = this.querySelector('.bea-loc__divider');
+          this.empty = this.querySelector('.bea-loc__empty');
+          var self = this;
+
+          this.toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (self.panel.hasAttribute('hidden')) {
+              self.panel.removeAttribute('hidden'); self.toggle.setAttribute('aria-expanded','true');
+              if (self.search) { self.search.value = ''; self.filter(''); setTimeout(function(){ self.search.focus(); }, 50); }
+            } else {
+              self.panel.setAttribute('hidden',''); self.toggle.setAttribute('aria-expanded','false');
+            }
+          });
+
+          this.querySelectorAll('.bea-loc__opt').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var input = self.form.querySelector('input[name="' + btn.dataset.field + '"]');
+              if (input) input.value = btn.dataset.value;
+              self.form.submit();
+            });
+          });
+
+          if (this.search) {
+            this.search.addEventListener('input', function () { self.filter(self.search.value); });
+            // evitar que Enter envie el form de localizacion
+            this.search.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+          }
+
+          document.addEventListener('click', function (e) {
+            if (!self.contains(e.target)) { self.panel.setAttribute('hidden',''); self.toggle.setAttribute('aria-expanded','false'); }
+          });
+        }
+
+        filter(q) {
+          q = (q || '').trim().toLowerCase();
+          var items = this.querySelectorAll('.bea-loc__country-item');
+          var visible = 0;
+          items.forEach(function (li) {
+            var match = !q || (li.getAttribute('data-name') || '').indexOf(q) !== -1;
+            li.hidden = !match;
+            if (match) visible++;
+          });
+          if (this.divider) this.divider.hidden = !!q;      // ocultar separador al buscar
+          if (this.empty) this.empty.hidden = visible > 0;  // "sin resultados"
+        }
+      });
+    }
+  </script>
+{%- endif -%}
