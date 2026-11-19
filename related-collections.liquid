@@ -1,0 +1,161 @@
+{%- comment -%}
+  BEALGND · Related collections (slider Swiper) — versión aislada
+  Réplica de make-it-shine, con CSS propio scopeado (prefijo .bcl-) para
+  NO tocar las fichas de producto del tema.
+  Instalación: sube este archivo a sections/. Swiper se carga por CDN.
+  Elige las colecciones por bloques.
+{%- endcomment -%}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" media="print" onload="this.media='all'">
+
+{%- style -%}
+  .bcl-{{ section.id }} {
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+    background: {{ section.settings.bg_color }};
+  }
+  .bcl-{{ section.id }} .bcl__wrap { position: relative; overflow: hidden; }
+  .bcl-{{ section.id }} .bcl-swiper { overflow: visible; padding: 6px 0 4px; }
+  .bcl-{{ section.id }} .swiper-wrapper { align-items: center; }
+
+  .bcl-{{ section.id }} .bcl-slide {
+    width: 40%;                     /* móvil */
+    transition: transform .2s ease-in-out;
+  }
+  .bcl-{{ section.id }} .bcl-card {
+    position: relative; display: block;
+    width: 100%; height: {{ section.settings.card_height_mobile }}px;
+    border-radius: 6px; overflow: hidden;
+    background: #d9d9d9; text-decoration: none;
+  }
+  .bcl-{{ section.id }} .bcl-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bcl-{{ section.id }} .bcl-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,.35); font-size: 13px; }
+  .bcl-{{ section.id }} .bcl-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 42%); }
+  .bcl-{{ section.id }} .bcl-name {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    padding: 7px 14px;
+    color: #fff; font-family: "Inter", var(--font-body-family);
+    font-size: {{ section.settings.font_size_mobile }}px; font-weight: 400;
+    letter-spacing: -0.03em; line-height: 1.2; text-align: right;
+    text-transform: none;
+  }
+
+  /* Slide activo (centro): un pelín más alto */
+  .bcl-{{ section.id }} .swiper-slide-active { transform: scaleY(1.05); }
+
+  /* Paginación tipo guiones */
+  .bcl-{{ section.id }} .swiper-pagination { position: static; display: flex; justify-content: center; margin-top: 14px; gap: 2px; }
+  .bcl-{{ section.id }} .swiper-pagination-bullet {
+    border-radius: 0; width: 30px; height: 1px; margin: 0 !important;
+    background: #000; opacity: .3; transition: width .2s ease, opacity .2s ease, background-color .2s ease;
+  }
+  .bcl-{{ section.id }} .swiper-pagination-bullet-active {
+    width: 46px; background: #121212; opacity: 1;
+  }
+
+  @media screen and (min-width: 750px) {
+    .bcl-{{ section.id }} .bcl-slide { width: 34%; }
+    .bcl-{{ section.id }} .bcl-card { height: {{ section.settings.card_height_desktop }}px; }
+    .bcl-{{ section.id }} .bcl-name { font-size: {{ section.settings.font_size_desktop }}px; }
+  }
+{%- endstyle -%}
+
+<div class="bcl-{{ section.id }}">
+  <div class="bcl__wrap">
+    <div class="swiper bcl-swiper bcl-swiper-{{ section.id }}">
+      <div class="swiper-wrapper">
+        {%- assign bcl_current_index = 0 -%}
+        {%- for block in section.blocks -%}
+          {%- assign col = block.settings.collection -%}
+          {%- if col.handle == collection.handle -%}{%- assign bcl_current_index = forloop.index0 -%}{%- endif -%}
+          <div class="swiper-slide bcl-slide" {{ block.shopify_attributes }}>
+            <a class="bcl-card" href="{{ col.url | default: '#' }}" draggable="false">
+              {%- assign img = block.settings.image | default: col.featured_image -%}
+              {%- if img -%}
+                {{ img | image_url: width: 900 | image_tag:
+                    loading: 'lazy',
+                    widths: '200,300,450,600,900',
+                    sizes: '(min-width:750px) 320px, 45vw',
+                    alt: col.title }}
+              {%- else -%}
+                <div class="bcl-ph">{{ col.title | default: 'Colección' }}</div>
+              {%- endif -%}
+              <div class="bcl-scrim"></div>
+              <span class="bcl-name">{{ block.settings.title | default: col.title }}</span>
+            </a>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+    <div class="swiper-pagination bcl-pagination-{{ section.id }}"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+<script>
+  (function () {
+    var SELECTOR = '.bcl-swiper-{{ section.id }}';
+    var tries = 0;
+    function initBcl() {
+      var el = document.querySelector(SELECTOR);
+      if (!el) { if (tries++ < 100) return setTimeout(initBcl, 100); return; }
+      if (el.classList.contains('swiper-initialized')) return;      // ya iniciado
+      if (typeof Swiper === 'undefined') { if (tries++ < 100) return setTimeout(initBcl, 100); return; }
+      try {
+        new Swiper(el, {
+          slidesPerView: 'auto',
+          spaceBetween: 5,
+          breakpoints: { 750: { spaceBetween: 10 } },
+          centeredSlides: true,
+          loop: {{ section.settings.loop }},
+          initialSlide: {{ bcl_current_index }},
+          pagination: { el: '.bcl-pagination-{{ section.id }}', clickable: true }
+        });
+      } catch (e) { /* si falla, reintenta una vez */ if (tries++ < 100) setTimeout(initBcl, 150); }
+    }
+    // arrancar ya (por si DOMContentLoaded ya pasó) y también al cargar
+    initBcl();
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initBcl); }
+    window.addEventListener('load', initBcl);
+    // en el editor de Shopify: reiniciar cuando la sección se recarga
+    document.addEventListener('shopify:section:load', function (ev) {
+      if (ev.target && ev.target.querySelector && ev.target.querySelector(SELECTOR)) { tries = 0; initBcl(); }
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "BEALGND · Colecciones",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    { "type": "color", "id": "bg_color", "label": "Color de fondo", "default": "#ffffff" },
+    { "type": "checkbox", "id": "loop", "label": "Bucle infinito", "default": true },
+    { "type": "header", "content": "Tamaño de tarjeta" },
+    { "type": "range", "id": "card_height_mobile", "min": 120, "max": 400, "step": 5, "unit": "px", "label": "Alto (móvil)", "default": 225 },
+    { "type": "range", "id": "card_height_desktop", "min": 120, "max": 500, "step": 5, "unit": "px", "label": "Alto (escritorio)", "default": 320 },
+    { "type": "header", "content": "Título" },
+    { "type": "range", "id": "font_size_mobile", "min": 10, "max": 30, "step": 1, "unit": "px", "label": "Tamaño título (móvil)", "default": 14 },
+    { "type": "range", "id": "font_size_desktop", "min": 10, "max": 40, "step": 1, "unit": "px", "label": "Tamaño título (escritorio)", "default": 16 },
+    { "type": "header", "content": "Espaciado" },
+    { "type": "range", "id": "padding_top", "min": 0, "max": 100, "step": 2, "unit": "px", "label": "Espacio arriba", "default": 16 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 100, "step": 2, "unit": "px", "label": "Espacio abajo", "default": 20 }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Colección",
+      "settings": [
+        { "type": "collection", "id": "collection", "label": "Colección" },
+        { "type": "text", "id": "title", "label": "Título personalizado (opcional)" },
+        { "type": "image_picker", "id": "image", "label": "Imagen personalizada (opcional)" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "BEALGND · Colecciones", "blocks": [ { "type": "collection" }, { "type": "collection" }, { "type": "collection" } ] }
+  ]
+}
+{% endschema %}
