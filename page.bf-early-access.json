@@ -1,0 +1,95 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "hero": {
+      "type": "bea-bf-hero",
+      "settings": {
+        "image": "shopify://shop_images/bealgnd-banner-travel-2.jpg",
+        "image_position_mobile": "50% 50%",
+        "image_position_desktop": "50% 50%",
+        "chip": "Black Friday 2026 · Early Access",
+        "title_top": "UP TO",
+        "title_big": "70%",
+        "title_off": "OFF",
+        "title_rest": "before everyone",
+        "subtitle": "Black Friday opens on 11 November, only for the VIP list.",
+        "countdown_end": "2026-11-11T18:00:00+01:00",
+        "cd_days": "days",
+        "cd_hours": "hrs",
+        "cd_minutes": "min",
+        "cd_seconds": "sec",
+        "cd_aria": "Early access opens in",
+        "placeholder": "Your email",
+        "button": "Get early access",
+        "button_loading": "Joining…",
+        "micro": "Free to join · Unsubscribe anytime",
+        "error_text": "Please enter a valid email and try again.",
+        "klaviyo_public_key": "SGSY9s",
+        "klaviyo_list_id": "UyN2fx",
+        "klaviyo_source": "BF Early Access landing",
+        "footer_adapt": true
+      }
+    },
+    "ticker": {
+      "type": "bea-bf-ticker",
+      "settings": {
+        "animate": true,
+        "a_big": "UP TO 70% OFF",
+        "a_small": "VIP EARLY ACCESS",
+        "b_big": "BLACK FRIDAY 11/11",
+        "b_small": "UP TO 70% OFF"
+      }
+    },
+    "products": {
+      "type": "bea-bf-products",
+      "settings": {
+        "title": "First pick on 11/11",
+        "subtitle": "Bestsellers going on sale",
+        "products": [
+          "monogram-duffle-bag",
+          "bandolera-lgnd-monogram",
+          "croc-duffle-bag",
+          "neceser-dopp-kit"
+        ],
+        "tag": "UP TO -70%",
+        "link_label": "Shop bestsellers",
+        "link_url": "shopify://collections/best-sellers"
+      }
+    },
+    "confirm": {
+      "type": "bea-bf-confirm",
+      "settings": {
+        "chip": "Black Friday 2026 · Early Access",
+        "title": "You’re on the list.",
+        "text": "We’ll email you the moment early access opens on 11 November. Up to 70% off, before everyone else.",
+        "countdown_end": "2026-11-11T18:00:00+01:00",
+        "cd_label": "Early access opens in",
+        "cd_days": "Days",
+        "cd_hours": "Hours",
+        "cd_minutes": "Min",
+        "cd_seconds": "Sec",
+        "cal_button": "Add 11 Nov to my calendar",
+        "cal_title": "BEALGND Black Friday · Early Access",
+        "cal_text": "Up to 70% off, only for the VIP list.",
+        "social_button": "Follow @bealgnd",
+        "social_url": "https://www.instagram.com/bealgnd/",
+        "tip_title": "Can’t find our email?",
+        "tip_text": "Check your Promotions or Spam folder and move us to your inbox, so you don’t miss 11 November."
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "ticker",
+    "products",
+    "confirm"
+  ]
+}

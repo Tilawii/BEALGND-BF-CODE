@@ -1,0 +1,35 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "bealgnd-set-builder",
+      "settings": {
+        "tier1_collection": "nivel-1-bogo",
+        "tier2_collection": "nivel-2-bogo",
+        "title": "BUY 1 GET 1 FREE",
+        "subtitle": "Choose your bag, pick your free gift, then add more for 50% off.",
+        "show_faq": true,
+        "faq_title": "FAQ",
+        "faq1_q": "How does the offer work?",
+        "faq1_a": "Add a bag to your cart and your free gift is applied automatically at checkout. You can also add a second item at 50% off — repeat it for as many bags as you like.",
+        "faq2_q": "Which item is the free gift?",
+        "faq2_a": "It depends on the bag you choose, and your options appear in step 2. Travel bags unlock a free Pouch, MacBook case or Cardholder. Crossbody bags and accessories unlock a free Cardholder.",
+        "faq3_q": "How does the 50% off work?",
+        "faq3_a": "Once your bag and free gift are in the cart, you can add a matching item at 50% off straight from the cart. The discount applies automatically.",
+        "faq4_q": "When will I receive my order?",
+        "faq4_a": "Free worldwide shipping with delivery in 6–10 business days. Returns are free within 30 days."
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

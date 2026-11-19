@@ -1,0 +1,187 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "title": {
+          "type": "title",
+          "settings": {}
+        },
+        "price": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "buy_buttons": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": false,
+            "show_gift_card_recipient": true
+          }
+        },
+        "bea_bogo_7Fcg7E": {
+          "type": "bea_bogo",
+          "settings": {
+            "heading": "Buy one, get one FREE",
+            "subheading": "Add your free gift",
+            "tier1_collection": "nivel-1-bogo",
+            "tier2_collection": "nivel-2-bogo",
+            "card_width": 120
+          }
+        },
+        "bea_payments_x8yrrr": {
+          "type": "bea_payments",
+          "settings": {}
+        },
+        "bea_features_W3qAiY": {
+          "type": "bea_features",
+          "disabled": true,
+          "settings": {
+            "text_size": 12,
+            "show_stock": true,
+            "stock_in_label": "In stock",
+            "stock_out_label": "Out of stock",
+            "icon_1": "truck",
+            "text_1": "Free shipping",
+            "icon_2": "shield",
+            "text_2": "1 Year warranty",
+            "icon_3": "gem",
+            "text_3": "Premium Material",
+            "icon_4": "lock",
+            "text_4": "Secure Check Out",
+            "icon_5": "",
+            "text_5": ""
+          }
+        },
+        "bea_upsell_JtwyzP": {
+          "type": "bea_upsell",
+          "disabled": true,
+          "settings": {
+            "heading": "Complete your order"
+          }
+        },
+        "bea_accordions_jfQPKL": {
+          "type": "bea_accordions",
+          "settings": {
+            "desc_title": "Description",
+            "desc_content": "{{ product.description }}",
+            "mat_title": "Materials & Warranty",
+            "mat_content": "<p>Made from premium coated canvas with full-grain leather trims and tarnish-resistant hardware, designed to age well with daily use.</p><p>Backed by a 1-year warranty against manufacturing defects. Wipe clean with a soft dry cloth; keep away from water and heat.</p>",
+            "del_title": "Deliveries & Returns",
+            "del_content": "<p>Orders are processed within 24h and shipped with tracking. Delivery times vary by location and are shown at checkout.</p><p>30 days to return any unused item in its original condition. To start a return, email us at <a href=\"mailto:support@bealgnd.com\">support@bealgnd.com</a> with your order number.</p>",
+            "rev_title": "Reviews",
+            "rev_content": "",
+            "advisor_label": "Chat with an advisor on",
+            "phone": "+34 663 56 97 46"
+          }
+        },
+        "bea_related_geP6je": {
+          "type": "bea_related",
+          "settings": {
+            "title": "YOU WILL LIKE ALSO",
+            "limit": 10
+          },
+          "disabled": true
+        },
+        "bea_ficha_ventajas": {
+          "type": "custom_liquid",
+          "settings": {
+            "custom_liquid": "{% render 'bea-ficha-ventajas', product: product %}"
+          }
+        },
+        "bea_ficha_arriba": {
+          "type": "custom_liquid",
+          "settings": {
+            "custom_liquid": "{% render 'bea-ficha-arriba', product: product %}"
+          }
+        }
+      },
+      "block_order": [
+        "title",
+        "price",
+        "variant_picker",
+        "bea_bogo_7Fcg7E",
+        "buy_buttons",
+        "bea_payments_x8yrrr",
+        "bea_ficha_arriba",
+        "bea_features_W3qAiY",
+        "bea_upsell_JtwyzP",
+        "bea_ficha_ventajas",
+        "bea_accordions_jfQPKL",
+        "bea_related_geP6je"
+      ],
+      "settings": {
+        "enable_sticky_info": true,
+        "color_scheme": "scheme-1",
+        "media_size": "large",
+        "constrain_to_viewport": false,
+        "media_fit": "cover",
+        "gallery_layout": "stacked",
+        "mobile_thumbnails": "hide",
+        "media_position": "left",
+        "image_zoom": "none",
+        "hide_variants": true,
+        "enable_video_looping": false,
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
+    },
+    "related-products": {
+      "type": "related-products",
+      "disabled": true,
+      "settings": {
+        "heading": "You may also like",
+        "heading_size": "h2",
+        "products_to_show": 4,
+        "columns_desktop": 4,
+        "columns_mobile": "2",
+        "color_scheme": "scheme-1",
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "padding_top": 36,
+        "padding_bottom": 72
+      }
+    },
+    "bea_ficha_historia": {
+      "type": "bea-ficha-historia",
+      "settings": {}
+    },
+    "bea_ficha_incluye": {
+      "type": "bea-ficha-incluye",
+      "settings": {
+        "title": "What's in the box",
+        "gift_label": "FREE GIFT"
+      }
+    },
+    "bea_ficha_resenas": {
+      "type": "bea-ficha-resenas",
+      "settings": {
+        "title": "Reviews"
+      }
+    },
+    "bea_ficha_relacionados": {
+      "type": "bea-ficha-relacionados",
+      "settings": {
+        "title": "YOU WILL LIKE ALSO",
+        "limit": 6
+      }
+    }
+  },
+  "order": [
+    "main",
+    "bea_ficha_historia",
+    "bea_ficha_incluye",
+    "bea_ficha_resenas",
+    "bea_ficha_relacionados",
+    "related-products"
+  ]
+}
