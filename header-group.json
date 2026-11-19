@@ -1,0 +1,319 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "name": "t:sections.header.name",
+  "type": "header",
+  "sections": {
+    "bealgnd_announcement": {
+      "type": "bealgnd-announcement",
+      "blocks": {
+        "message_M9i9pc": {
+          "type": "message",
+          "settings": {
+            "text": "<strong>Free shipping*</strong> now Worldwide",
+            "link": ""
+          }
+        },
+        "message_ReYfCb": {
+          "type": "message",
+          "settings": {
+            "text": "<strong>Buy 1 Get 1 &nbsp;Free*</strong> a gift with every bag",
+            "link": ""
+          }
+        },
+        "message_iBFYCx": {
+          "type": "message",
+          "settings": {
+            "text": "<strong>30 day*</strong> easy return",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "message_M9i9pc",
+        "message_ReYfCb",
+        "message_iBFYCx"
+      ],
+      "settings": {
+        "bg_color": "#000000",
+        "text_color": "#ffffff",
+        "font_size": 11,
+        "letter_spacing": -0.3,
+        "uppercase": false,
+        "padding_vertical": 9,
+        "speed": 24,
+        "pause_on_hover": false,
+        "item_spacing": 40,
+        "separator": ""
+      }
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "logo_position": "middle-center",
+        "mobile_logo_position": "left",
+        "menu": "main-menu",
+        "menu_type_desktop": "drawer",
+        "sticky_header_type": "on-scroll-up",
+        "show_line_separator": false,
+        "color_scheme": "scheme-1",
+        "menu_color_scheme": "scheme-3",
+        "enable_country_selector": false,
+        "enable_language_selector": false,
+        "margin_bottom": 0,
+        "padding_top": 20,
+        "padding_bottom": 20
+      }
+    },
+    "bea_menu_lateral": {
+      "type": "bea-menu-lateral",
+      "blocks": {
+        "promo": {
+          "type": "_bea-menu-promo",
+          "static": true,
+          "settings": {
+            "title": "Free worldwide shipping",
+            "subtitle": "On every order — made for legends"
+          }
+        },
+        "big": {
+          "type": "_bea-menu-big-list",
+          "static": true,
+          "settings": {},
+          "blocks": {
+            "big_bf": {
+              "type": "bea-menu-big-link",
+              "settings": {
+                "title": "Black Friday",
+                "link": "shopify://collections/all",
+                "badge": "Up to 70% off",
+                "badge_color": "#ce0b0b"
+              }
+            },
+            "big_build_set": {
+              "type": "bea-menu-big-link",
+              "disabled": true,
+              "settings": {
+                "title": "Build your set",
+                "link": "shopify://pages/build-your-set",
+                "badge": "Buy 1 Get 1 Free",
+                "badge_color": "#ce0b0b"
+              }
+            },
+            "big_bestsellers": {
+              "type": "bea-menu-big-link",
+              "settings": {
+                "title": "Bestsellers",
+                "link": "shopify://collections/best-sellers",
+                "badge": "",
+                "badge_color": "#ce0b0b"
+              }
+            },
+            "big_bags": {
+              "type": "bea-menu-big-link",
+              "settings": {
+                "title": "Bags",
+                "link": "shopify://collections/bags",
+                "badge": "Iconic",
+                "badge_color": "#8a8a8a"
+              }
+            },
+            "big_travel": {
+              "type": "bea-menu-big-link",
+              "settings": {
+                "title": "Travel Bags",
+                "link": "shopify://collections/travel-bags-new-collection",
+                "badge": "New collection",
+                "badge_color": "#006815"
+              }
+            },
+            "big_denim": {
+              "type": "bea-menu-big-link",
+              "settings": {
+                "title": "Denim Set",
+                "link": "shopify://collections/denim-set-limited-edition-bealgnd-x-28",
+                "badge": "Limited edition",
+                "badge_color": "#ce0b0b"
+              }
+            }
+          },
+          "block_order": [
+            "big_bf",
+            "big_build_set",
+            "big_bestsellers",
+            "big_bags",
+            "big_travel",
+            "big_denim"
+          ]
+        },
+        "list": {
+          "type": "_bea-menu-list",
+          "static": true,
+          "settings": {},
+          "blocks": {
+            "item_accessories": {
+              "type": "bea-menu-link",
+              "settings": {
+                "title": "Accessories"
+              },
+              "blocks": {
+                "accessories_sub_1": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Crossbody Bags",
+                    "link": "shopify://collections/crossbody-bags"
+                  }
+                },
+                "accessories_sub_2": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Travel Bags",
+                    "link": "shopify://collections/travel-bags-new-collection"
+                  }
+                },
+                "accessories_sub_3": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Dopp Kit",
+                    "link": "shopify://collections/neceser-dopp-kits"
+                  }
+                },
+                "accessories_sub_4": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Cardholders",
+                    "link": "shopify://collections/cardholders"
+                  }
+                },
+                "accessories_sub_5": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Headwear",
+                    "link": "shopify://collections/headwear"
+                  }
+                },
+                "accessories_sub_6": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Key Rings",
+                    "link": "shopify://collections/key-rings"
+                  }
+                }
+              },
+              "block_order": [
+                "accessories_sub_1",
+                "accessories_sub_2",
+                "accessories_sub_3",
+                "accessories_sub_4",
+                "accessories_sub_5",
+                "accessories_sub_6"
+              ]
+            },
+            "item_clothing": {
+              "type": "bea-menu-link",
+              "settings": {
+                "title": "Clothing"
+              },
+              "blocks": {
+                "clothing_sub_1": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "T-Shirts",
+                    "link": "shopify://collections/shirts"
+                  }
+                },
+                "clothing_sub_2": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Knit Vest",
+                    "link": "shopify://collections/knit-vest"
+                  }
+                },
+                "clothing_sub_3": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Shorts",
+                    "link": "shopify://collections/shorts"
+                  }
+                },
+                "clothing_sub_4": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Hoodies",
+                    "link": "shopify://collections/pre-order-lgnds-club-hoodies"
+                  }
+                }
+              },
+              "block_order": [
+                "clothing_sub_1",
+                "clothing_sub_2",
+                "clothing_sub_3",
+                "clothing_sub_4"
+              ]
+            },
+            "item_jewellery": {
+              "type": "bea-menu-link",
+              "settings": {
+                "title": "Jewellery",
+                "link": "shopify://collections/jewellery"
+              }
+            },
+            "item_about": {
+              "type": "bea-menu-link",
+              "settings": {
+                "title": "About us",
+                "link": "shopify://pages/about-us"
+              }
+            },
+            "item_help": {
+              "type": "bea-menu-link",
+              "settings": {
+                "title": "Help"
+              },
+              "blocks": {
+                "help_sub_1": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "FAQ",
+                    "link": "shopify://pages/preguntas-frequentes"
+                  }
+                },
+                "help_sub_2": {
+                  "type": "bea-menu-sublink",
+                  "settings": {
+                    "title": "Shipping & Returns",
+                    "link": "shopify://pages/envios-cambios-y-devoluciones"
+                  }
+                }
+              },
+              "block_order": [
+                "help_sub_1",
+                "help_sub_2"
+              ]
+            }
+          },
+          "block_order": [
+            "item_accessories",
+            "item_clothing",
+            "item_jewellery",
+            "item_about",
+            "item_help"
+          ]
+        }
+      },
+      "settings": {}
+    }
+  },
+  "order": [
+    "bealgnd_announcement",
+    "bea_menu_lateral",
+    "header"
+  ]
+}

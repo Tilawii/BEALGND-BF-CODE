@@ -1,0 +1,197 @@
+{% doc %}
+  Renders a header drawer menu (BEALGND · estilo Make It Shine, acordeón).
+  Contenido del menú editable desde Personalizar > "BEALGND · Menú lateral" (sección del grupo Encabezado).
+
+  i18n: todos los textos usan claves bealgnd.drawer.* (locales/en.default.json), traducibles en
+  Translate & Adapt > "Contenido del tema predeterminado" (buscar "bealgnd"). NO tocar aqui para traducir.
+  Enlaces: llevan {{ rr }} (routes.root_url) delante para respetar el idioma activo (/fr/, /es/...).
+  Textos y enlaces: en Personalizar. Traducciones: Translate & Adapt > Grupos de secciones > Header Group.
+
+@param {boolean} [show_country_selector]
+@param {boolean} [show_language_selector]
+@param {boolean} [show_social_links]
+{% enddoc %}
+
+{%- comment -%} Raiz localizada normalizada: routes.root_url devuelve '/' en ingles pero '/fr' (SIN barra final) en otros idiomas.
+   Forzamos que termine siempre en '/' para poder concatenar 'pages/...', 'collections/...'. {%- endcomment -%}
+{%- assign rr = routes.root_url -%}
+{%- assign rr_last = rr | slice: -1 -%}
+{%- unless rr_last == '/' -%}{%- assign rr = rr | append: '/' -%}{%- endunless -%}
+
+{{ 'bealgnd-menu.css' | asset_url | stylesheet_tag }}
+
+<header-drawer data-breakpoint="{% if section.settings.menu_type_desktop == 'drawer' %}desktop{% else %}tablet{% endif %}">
+  <details id="Details-menu-drawer-container" class="menu-drawer-container">
+    <summary
+      class="header__icon header__icon--menu header__icon--summary link focus-inset"
+      aria-label="{{ 'sections.header.menu' | t }}"
+    >
+      <span>
+        {{- 'icon-hamburger.svg' | inline_asset_content -}}
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </span>
+    </summary>
+    <div id="menu-drawer" class="gradient menu-drawer motion-reduce color-{{ section.settings.menu_color_scheme }}">
+      <button type="button" class="bea-menu__close" aria-label="{{ 'accessibility.close' | t }}">
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </button>
+      <div class="menu-drawer__inner-container">
+        <div class="menu-drawer__navigation-container">
+
+          <nav class="menu-drawer__navigation">
+
+            {%- comment -%} ===== Contenido del menú: viene de la sección "BEALGND · Menú lateral" (Personalizar). Se inserta aquí al cargar. ===== {%- endcomment -%}
+            <template id="BeaMenuStart"></template><template id="BeaMenuEnd"></template>
+            <script>
+              (function () {
+                function beaFillMenu() {
+                  var src = document.getElementById('BeaMenuSource');
+                  var start = document.getElementById('BeaMenuStart');
+                  var end = document.getElementById('BeaMenuEnd');
+                  if (!src || !start || !end) return;
+                  while (start.nextSibling && start.nextSibling !== end) start.parentNode.removeChild(start.nextSibling);
+                  start.insertAdjacentHTML('afterend', src.innerHTML);
+                }
+                beaFillMenu();
+                if (window.Shopify && Shopify.designMode && !window.__beaMenuDesign) {
+                  window.__beaMenuDesign = true;
+                  ['shopify:section:load', 'shopify:section:reorder'].forEach(function (ev) {
+                    document.addEventListener(ev, function () { setTimeout(beaFillMenu, 0); });
+                  });
+                }
+              })();
+            </script>
+          </nav>
+
+          {%- comment -%} ===== Pie: país/moneda (mismo selector que el footer) + logo ===== {%- endcomment -%}
+          <div class="bea-menu__footer">
+            <div class="bea-menu__localization">
+              {%- render 'bea-menu-localization' -%}
+            </div>
+
+            {%- comment -%} Logo del menú (fijo, blanco) — independiente del logo global del tema {%- endcomment -%}
+            <a href="{{ routes.root_url }}" class="bea-menu__footer-logo" aria-label="{{ shop.name | escape }}">
+              <img
+                src="https://cdn.shopify.com/s/files/1/0537/3840/6053/files/q1B5HI_tif.svg?v=1789006172"
+                alt="{{ shop.name | escape }}"
+                loading="lazy"
+              >
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </details>
+</header-drawer>
+
+<script>
+  (function () {
+    var container = document.getElementById('Details-menu-drawer-container');
+    if (!container || container.dataset.beaBound === '1') return;
+    container.dataset.beaBound = '1';
+
+    var closeTimer = null;
+    var intentionalClose = false;   // true SOLO cuando cerramos nosotros a proposito
+    var lastLocalizationTouch = 0;  // ts del ultimo clic dentro del selector pais/idioma
+
+    function cartIsOpen() {
+      var cd = document.querySelector('cart-drawer');
+      return !!(cd && cd.classList.contains('active'));
+    }
+
+    function openMenu() {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+      intentionalClose = false;
+      container.classList.remove('bea-closing');
+      container.setAttribute('open', '');
+      document.body.classList.add('bea-menu-open');
+    }
+
+    function closeMenu() {
+      if (!container.hasAttribute('open')) return;
+      intentionalClose = true;
+      // cierra el desplegable de localizacion si se quedo abierto
+      container.querySelectorAll('.bea-menu__localization details[open]').forEach(function (d) {
+        d.removeAttribute('open');
+      });
+      container.classList.add('bea-closing');
+      if (closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(function () {
+        container.removeAttribute('open');
+        container.classList.remove('bea-closing');
+        // solo desbloquea el scroll si el carrito no esta abierto
+        if (!cartIsOpen()) document.body.classList.remove('bea-menu-open');
+        closeTimer = null;
+        intentionalClose = false;
+      }, 280);
+    }
+
+    // Boton hamburguesa (abrir/cerrar) — se adelanta a Dawn
+    var mainSummary = container.querySelector('summary.header__icon--menu');
+    if (mainSummary) {
+      mainSummary.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        container.hasAttribute('open') ? closeMenu() : openMenu();
+      }, true);
+    }
+
+    // Boton X interno
+    var closeBtn = container.querySelector('.bea-menu__close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeMenu();
+      });
+    }
+
+    // Acordeones del menu (Accessories, Clothing, Help)
+    container.querySelectorAll('summary.bea-menu__link--parent').forEach(function (sum) {
+      sum.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var det = sum.closest('details');
+        if (!det) return;
+        det.hasAttribute('open') ? det.removeAttribute('open') : det.setAttribute('open', '');
+      }, true);
+    });
+
+    // Marca cuando tocas el selector pais/idioma (SIN bloquear que se despliegue)
+    var loc = container.querySelector('.bea-menu__localization');
+    if (loc) {
+      loc.addEventListener('click', function () {
+        lastLocalizationTouch = Date.now();
+      }, true);
+    }
+
+    // RED DE SEGURIDAD: si algo externo (global.js de Dawn) quita el "open" justo
+    // despues de tocar la bandera y NO hemos sido nosotros -> lo revertimos (reabrir).
+    // Asi el menu deja de cerrarse solo al interactuar con el selector de idioma.
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        if (muts[i].attributeName !== 'open') continue;
+        var closedNow = !container.hasAttribute('open');
+        if (closedNow && !intentionalClose && (Date.now() - lastLocalizationTouch) < 700) {
+          container.classList.remove('bea-closing');
+          container.setAttribute('open', '');
+          document.body.classList.add('bea-menu-open');
+        }
+      }
+    }).observe(container, { attributes: true, attributeFilter: ['open'] });
+
+    // Cerrar al tocar fuera — nunca al tocar el menu ni el selector de idioma
+    document.addEventListener('click', function (e) {
+      if (!container.hasAttribute('open')) return;
+      if (e.target.closest('#menu-drawer')) return;
+      if (e.target.closest('summary.header__icon--menu')) return;
+      if (e.target.closest('.bea-menu__localization')) return;
+      if (e.target.closest('localization-form, .disclosure, .disclosure__list-wrapper, .country-selector, .country-filter')) return;
+      closeMenu();
+    });
+
+    document.addEventListener('keyup', function (e) {
+      if (e.code === 'Escape' && container.hasAttribute('open')) closeMenu();
+    });
+  })();
+</script>
